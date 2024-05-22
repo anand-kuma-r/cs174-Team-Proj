@@ -17,13 +17,17 @@ export class Final_Project extends Scene {
             circle: new defs.Regular_2D_Polygon(1, 15),
             // TODO:  Fill in as many additional shape instances as needed in this key/value table.
             //        (Requirement 1)
-            sun: new defs.Subdivision_Sphere(4),
-            planet1: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
-            planet2: new defs.Subdivision_Sphere(3),
-            planet3: new defs.Subdivision_Sphere(4),
-            ring: new defs.Torus(50, 50),
-            planet4: new defs.Subdivision_Sphere(4),
-            moon: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(1),
+            // sun: new defs.Subdivision_Sphere(4),
+            // planet1: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
+            // planet2: new defs.Subdivision_Sphere(3),
+            // planet3: new defs.Subdivision_Sphere(4),
+            // ring: new defs.Torus(50, 50),
+            // planet4: new defs.Subdivision_Sphere(4),
+            // moon: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(1),
+            
+            //Final Project:
+            road: new defs.Cube(),
+            desert: new defs.Cube(),
         };
 
         // *** Materials
@@ -35,39 +39,44 @@ export class Final_Project extends Scene {
             ring: new Material(new Ring_Shader()),
             // TODO:  Fill in as many additional material objects as needed in this key/value table.
             //        (Requirement 4)
-            sun_mat: new Material(new defs.Phong_Shader(),
-                {ambient: 1, diffusivity: 1}),
-            planet1_mat: new Material(new defs.Phong_Shader(),
-                {ambient: 0, diffusivity: 1, color: hex_color('#808080'), specularity: 0}),
-            planet2_mat_phong: new Material(new defs.Phong_Shader(),
-                {ambient: 0, diffusivity: 0.2, color: hex_color("#80FFFF")}),
-            planet2_mat_gouraud: new Material(new Gouraud_Shader(),
-                {ambient: 0, diffusivity: 0.2, color: hex_color("#80FFFF")}),
-            planet3_mat: new Material(new defs.Phong_Shader(),
-                {ambient: 0, diffusivity: 1, color: hex_color("#B08040")}),
-            ring_mat: new Material(new Ring_Shader(),
-                {ambient: 1, diffusivity: 1, color: hex_color("#B08040")}),
-            planet4_mat: new Material(new defs.Phong_Shader(),
-                {ambient: 0, smoothness:40 , color: hex_color("#ADD8E6")}),
-            moon_mat: new Material(new defs.Phong_Shader(),
-                {ambient: 0, color:hex_color("#FFFFFF"), specularity: 0})
+            // sun_mat: new Material(new defs.Phong_Shader(),
+            //     {ambient: 1, diffusivity: 1}),
+            // planet1_mat: new Material(new defs.Phong_Shader(),
+            //     {ambient: 0, diffusivity: 1, color: hex_color('#808080'), specularity: 0}),
+            // planet2_mat_phong: new Material(new defs.Phong_Shader(),
+            //     {ambient: 0, diffusivity: 0.2, color: hex_color("#80FFFF")}),
+            // planet2_mat_gouraud: new Material(new Gouraud_Shader(),
+            //     {ambient: 0, diffusivity: 0.2, color: hex_color("#80FFFF")}),
+            // planet3_mat: new Material(new defs.Phong_Shader(),
+            //     {ambient: 0, diffusivity: 1, color: hex_color("#B08040")}),
+            // ring_mat: new Material(new Ring_Shader(),
+            //     {ambient: 1, diffusivity: 1, color: hex_color("#B08040")}),
+            // planet4_mat: new Material(new defs.Phong_Shader(),
+            //     {ambient: 0, smoothness:40 , color: hex_color("#ADD8E6")}),
+            // moon_mat: new Material(new defs.Phong_Shader(),
+            //     {ambient: 0, color:hex_color("#FFFFFF"), specularity: 0})
+
+            road_mat: new Material(new defs.Phong_Shader(),
+            {ambient: 0.8, diffusivity: 0.5, color: hex_color("#303030"),specularity: 0}),
+            desert_mat: new Material(new defs.Phong_Shader(),
+            {ambient: 0.8, diffusivity: 0.5, color: hex_color("#E3CDA4"),specularity: 0}),
             
         }
 
-        this.initial_camera_location = Mat4.look_at(vec3(0, 10, 20), vec3(0, 0, 0), vec3(0, 1, 0));
+        this.initial_camera_location = Mat4.look_at(vec3(0, 5, -100), vec3(0, 0, 50), vec3(0, 1, 0));
     }
 
     make_control_panel() {
         // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.solar_system);
-        this.new_line();
-        this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
-        this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
-        this.new_line();
-        this.key_triggered_button("Attach to planet 3", ["Control", "3"], () => this.attached = () => this.planet_3);
-        this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
-        this.new_line();
-        this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
+        // this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.solar_system);
+        // this.new_line();
+        // this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
+        // this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
+        // this.new_line();
+        // this.key_triggered_button("Attach to planet 3", ["Control", "3"], () => this.attached = () => this.planet_3);
+        // this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
+        // this.new_line();
+        // this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
     }
 
     display(context, program_state) {
@@ -84,7 +93,7 @@ export class Final_Project extends Scene {
 
         // TODO: Create Planets (Requirement 1)
         // this.shapes.[XXX].draw([XXX]) // <--example
-
+        
         // TODO: Lighting (Requirement 2)
         const light_position = vec4(0, 5, 5, 1);
         const sunlight_position = vec4(0, 0, 0, 1);
@@ -97,97 +106,115 @@ export class Final_Project extends Scene {
         // let model_transform = Mat4.identity();
 
 
-        //SUN STUFF
-        const period = 10; // Period of 10 seconds for a full swell and shrink cycle
-        const max_scale = 3;
-        const min_scale = 1; 
-        const scale_offset = (max_scale + min_scale) / 2; // Offset to ensure scale goes from 1 to 3
+        // //SUN STUFF
+        // const period = 10; // Period of 10 seconds for a full swell and shrink cycle
+        // const max_scale = 3;
+        // const min_scale = 1; 
+        // const scale_offset = (max_scale + min_scale) / 2; // Offset to ensure scale goes from 1 to 3
 
-        const sun_scale_factor = scale_offset + Math.sin(((2 * Math.PI / period) * t) - 1.5);// added phase to make sure the function starts at red
-        const color_interpolation_factor = (sun_scale_factor - min_scale) / (max_scale - min_scale);
+        // const sun_scale_factor = scale_offset + Math.sin(((2 * Math.PI / period) * t) - 1.5);// added phase to make sure the function starts at red
+        // const color_interpolation_factor = (sun_scale_factor - min_scale) / (max_scale - min_scale);
 
-        const sun_color = color(
-            1, 
-            color_interpolation_factor, 
-            color_interpolation_factor, 
-            1
-        );
-        //Sun Light stuff
-        program_state.lights = [new Light(sunlight_position, sun_color, 10**sun_scale_factor)];
-        // Apply the scale transformation to the sun
-        let sun_transform = Mat4.identity().times(Mat4.scale(sun_scale_factor, sun_scale_factor, sun_scale_factor));
+        // const sun_color = color(
+        //     1, 
+        //     color_interpolation_factor, 
+        //     color_interpolation_factor, 
+        //     1
+        // );
+        // //Sun Light stuff
+        // program_state.lights = [new Light(sunlight_position, sun_color, 10**sun_scale_factor)];
+        // // Apply the scale transformation to the sun
+        // let sun_transform = Mat4.identity().times(Mat4.scale(sun_scale_factor, sun_scale_factor, sun_scale_factor));
         
-        //this.shapes.torus.draw(context, program_state, model_transform, this.materials.test.override({color: yellow}));
-        this.shapes.sun.draw(context, program_state, sun_transform, this.materials.sun_mat.override({color: sun_color}));
+        // //this.shapes.torus.draw(context, program_state, model_transform, this.materials.test.override({color: yellow}));
+        // this.shapes.sun.draw(context, program_state, sun_transform, this.materials.sun_mat.override({color: sun_color}));
 
-        //Planet 1 stuff
-        let planet1_transform = Mat4.identity();
-        let planet1_color = hex_color('#808080'); //grey
-        let x1 = -5*Math.cos(t*1);
-        let z1 = 5*Math.sin(t*1);
-        let y1 = 0;
-        let planet1_orbit = Mat4.identity().times(Mat4.translation(x1,y1,z1));
-        this.shapes.planet1.draw(context, program_state, planet1_transform.times(planet1_orbit), this.materials.planet1_mat.override({color: planet1_color}));
+        // //Planet 1 stuff
+        // let planet1_transform = Mat4.identity();
+        // let planet1_color = hex_color('#808080'); //grey
+        // let x1 = -5*Math.cos(t*1);
+        // let z1 = 5*Math.sin(t*1);
+        // let y1 = 0;
+        // let planet1_orbit = Mat4.identity().times(Mat4.translation(x1,y1,z1));
+        // this.shapes.planet1.draw(context, program_state, planet1_transform.times(planet1_orbit), this.materials.planet1_mat.override({color: planet1_color}));
         
-        //Planet 2 stuff
-        let planet2_transform = Mat4.identity();
-        let planet2_color = hex_color('#80FFFF');
-        let x2 = -9*Math.cos(t*0.75);
-        let z2 = 9*Math.sin(t*0.75);
-        let y2 = 0;
-        let planet2_orbit = Mat4.identity().times(Mat4.translation(x2,y2,z2));
-        if(Math.floor(t) % 2 === 0) {
-            this.shapes.planet2.draw(context, program_state, planet2_transform.times(planet2_orbit), this.materials.planet2_mat_phong.override({color: planet2_color}));
-        } else {
-            this.shapes.planet2.draw(context, program_state, planet2_transform.times(planet2_orbit), this.materials.planet2_mat_gouraud.override({color: planet2_color}));
-        }
-        //Planet 3 stuff
-        let planet3_transform = Mat4.identity();
-        let planet3_color = hex_color('#B08040');
-        let x3 = -13*Math.cos(t*0.5);
-        let z3 = 13*Math.sin(t*0.5);
-        let y3 = 0;
-        let planet3_orbit = Mat4.identity().times(Mat4.translation(x3,y3,z3));
-        let planet3_pos = planet3_transform.times(planet3_orbit)
-        this.shapes.planet3.draw(context, program_state, planet3_pos, this.materials.planet3_mat.override({color: planet3_color}));
-        let ring_transform  = planet3_pos.times(Mat4.scale(3.0,3.0, 0.1))
-        this.shapes.ring.draw(context,program_state, ring_transform, this.materials.ring_mat.override({color: planet3_color}));
+        // //Planet 2 stuff
+        // let planet2_transform = Mat4.identity();
+        // let planet2_color = hex_color('#80FFFF');
+        // let x2 = -9*Math.cos(t*0.75);
+        // let z2 = 9*Math.sin(t*0.75);
+        // let y2 = 0;
+        // let planet2_orbit = Mat4.identity().times(Mat4.translation(x2,y2,z2));
+        // if(Math.floor(t) % 2 === 0) {
+        //     this.shapes.planet2.draw(context, program_state, planet2_transform.times(planet2_orbit), this.materials.planet2_mat_phong.override({color: planet2_color}));
+        // } else {
+        //     this.shapes.planet2.draw(context, program_state, planet2_transform.times(planet2_orbit), this.materials.planet2_mat_gouraud.override({color: planet2_color}));
+        // }
+        // //Planet 3 stuff
+        // let planet3_transform = Mat4.identity();
+        // let planet3_color = hex_color('#B08040');
+        // let x3 = -13*Math.cos(t*0.5);
+        // let z3 = 13*Math.sin(t*0.5);
+        // let y3 = 0;
+        // let planet3_orbit = Mat4.identity().times(Mat4.translation(x3,y3,z3));
+        // let planet3_pos = planet3_transform.times(planet3_orbit)
+        // this.shapes.planet3.draw(context, program_state, planet3_pos, this.materials.planet3_mat.override({color: planet3_color}));
+        // let ring_transform  = planet3_pos.times(Mat4.scale(3.0,3.0, 0.1))
+        // this.shapes.ring.draw(context,program_state, ring_transform, this.materials.ring_mat.override({color: planet3_color}));
         
-        //Planet 4 stuff
-        let planet4_transform = Mat4.identity();
-        let planet4_color = hex_color('#ADD8E6'); 
-        let x4 = -17*Math.cos(t*0.25);
-        let z4 = 17*Math.sin(t*0.25);
-        let y4 = 0;
-        let planet4_orbit = Mat4.identity().times(Mat4.translation(x4,y4,z4));
+        // //Planet 4 stuff
+        // let planet4_transform = Mat4.identity();
+        // let planet4_color = hex_color('#ADD8E6'); 
+        // let x4 = -17*Math.cos(t*0.25);
+        // let z4 = 17*Math.sin(t*0.25);
+        // let y4 = 0;
+        // let planet4_orbit = Mat4.identity().times(Mat4.translation(x4,y4,z4));
 
-        this.shapes.planet4.draw(context, program_state, planet4_transform.times(planet4_orbit), this.materials.planet4_mat.override({color: planet4_color}));
+        // this.shapes.planet4.draw(context, program_state, planet4_transform.times(planet4_orbit), this.materials.planet4_mat.override({color: planet4_color}));
         
-        // Moon stuff
-        let moon_transform = Mat4.identity();
-        let xm = -2*Math.cos(t);
-        let ym = 0
-        let zm = 2*Math.sin(t);
-        let moon_orbit = planet4_orbit.times(Mat4.translation(xm,ym,zm))
-        moon_transform = moon_orbit.times(Mat4.scale(0.5,0.5,0.5))
-        this.shapes.moon.draw(context, program_state, moon_transform, this.materials.moon_mat);
+        // // Moon stuff
+        // let moon_transform = Mat4.identity();
+        // let xm = -2*Math.cos(t);
+        // let ym = 0
+        // let zm = 2*Math.sin(t);
+        // let moon_orbit = planet4_orbit.times(Mat4.translation(xm,ym,zm))
+        // moon_transform = moon_orbit.times(Mat4.scale(0.5,0.5,0.5))
+        // this.shapes.moon.draw(context, program_state, moon_transform, this.materials.moon_mat);
 
-        this.planet_1 = planet1_transform.times(planet1_orbit).times(Mat4.translation(0, 0, 5));
-        this.planet_2 = planet2_transform.times(planet2_orbit).times(Mat4.translation(0, 0, 5));
-        this.planet_3 = planet3_transform.times(planet3_orbit).times(Mat4.translation(0, 0, 5));
-        this.planet_4 = planet4_transform.times(planet4_orbit).times(Mat4.translation(0, 0, 5));
-        this.moon = moon_transform.times(Mat4.translation(0, 0, 5));
-        this.solar_system = Mat4.inverse(this.initial_camera_location);
+        // this.planet_1 = planet1_transform.times(planet1_orbit).times(Mat4.translation(0, 0, 5));
+        // this.planet_2 = planet2_transform.times(planet2_orbit).times(Mat4.translation(0, 0, 5));
+        // this.planet_3 = planet3_transform.times(planet3_orbit).times(Mat4.translation(0, 0, 5));
+        // this.planet_4 = planet4_transform.times(planet4_orbit).times(Mat4.translation(0, 0, 5));
+        // this.moon = moon_transform.times(Mat4.translation(0, 0, 5));
+        // this.solar_system = Mat4.inverse(this.initial_camera_location);
 
-        if (this.attached !== undefined) {
-            const desired = Mat4.inverse(this.attached());
-            const blending_factor = 0.1;
-            program_state.set_camera(desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, blending_factor)));
+        // if (this.attached !== undefined) {
+        //     const desired = Mat4.inverse(this.attached());
+        //     const blending_factor = 0.1;
+        //     program_state.set_camera(desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, blending_factor)));
             
-        }
+        // }
+
+        // Road stuff
+        let road_transform = Mat4.identity();
+        let road_color = hex_color('#303030');
+        road_transform = Mat4.identity().times(Mat4.scale(9,1,150));
+        this.shapes.road.draw(context, program_state, road_transform, this.materials.road_mat.override({color: road_color}));
+
+        //desert stuff
+        let side1_transform = Mat4.identity();
+        let desert_color = hex_color('#E3CDA4');
+        side1_transform = Mat4.identity().times(Mat4.translation(1,-0.01,0));
+        side1_transform = side1_transform.times(Mat4.scale(250,1,150));
+        this.shapes.desert.draw(context, program_state, side1_transform, this.materials.desert_mat.override({color: desert_color}));
+        
+        // let side2_transform = Mat4.identity();
+        // side2_transform = Mat4.identity().times(Mat4.scale(1,1,150));
+        //this.shapes.desert.draw(context, program_state, side2_transform, this.materials.desert_mat.override({color: desert_color}));
 
     }
 }
+
 
 class Gouraud_Shader extends Shader {
     // This is a Shader using Phong_Shader as template

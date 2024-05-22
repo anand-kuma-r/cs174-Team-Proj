@@ -1344,6 +1344,7 @@ const Webgl_Manager = tiny.Webgl_Manager =
             this.prev_time = time;
 
             const gl = this.context;
+            gl.clearColor(0.7, 0.9, 1, .90); // Light blue background
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             // Clear the canvas's pixels and z-buffer.
 
