@@ -1,8 +1,6 @@
-import {defs, tiny} from './examples/common.js';
+import { defs, tiny } from "./examples/common.js";
 
-const {
-    Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene,
-} = tiny;
+const { Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene } = tiny;
 
 export class Final_Project extends Scene {
     constructor() {
@@ -11,59 +9,32 @@ export class Final_Project extends Scene {
 
         // At the beginning of our program, load one of each of these shape definitions onto the GPU.
         this.shapes = {
-            torus: new defs.Torus(15, 15),
-            torus2: new defs.Torus(3, 15),
-            sphere: new defs.Subdivision_Sphere(4),
-            circle: new defs.Regular_2D_Polygon(1, 15),
-            // TODO:  Fill in as many additional shape instances as needed in this key/value table.
-            //        (Requirement 1)
-            // sun: new defs.Subdivision_Sphere(4),
-            // planet1: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(2),
-            // planet2: new defs.Subdivision_Sphere(3),
-            // planet3: new defs.Subdivision_Sphere(4),
-            // ring: new defs.Torus(50, 50),
-            // planet4: new defs.Subdivision_Sphere(4),
-            // moon: new (defs.Subdivision_Sphere.prototype.make_flat_shaded_version())(1),
-            
             //Final Project:
             road: new defs.Cube(),
+            road_stripe: new defs.Cube(),
             desert: new defs.Cube(),
         };
 
         // *** Materials
         this.materials = {
-            test: new Material(new defs.Phong_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#ffffff")}),
-            test2: new Material(new Gouraud_Shader(),
-                {ambient: .4, diffusivity: .6, color: hex_color("#992828")}),
-            ring: new Material(new Ring_Shader()),
-            // TODO:  Fill in as many additional material objects as needed in this key/value table.
-            //        (Requirement 4)
-            // sun_mat: new Material(new defs.Phong_Shader(),
-            //     {ambient: 1, diffusivity: 1}),
-            // planet1_mat: new Material(new defs.Phong_Shader(),
-            //     {ambient: 0, diffusivity: 1, color: hex_color('#808080'), specularity: 0}),
-            // planet2_mat_phong: new Material(new defs.Phong_Shader(),
-            //     {ambient: 0, diffusivity: 0.2, color: hex_color("#80FFFF")}),
-            // planet2_mat_gouraud: new Material(new Gouraud_Shader(),
-            //     {ambient: 0, diffusivity: 0.2, color: hex_color("#80FFFF")}),
-            // planet3_mat: new Material(new defs.Phong_Shader(),
-            //     {ambient: 0, diffusivity: 1, color: hex_color("#B08040")}),
-            // ring_mat: new Material(new Ring_Shader(),
-            //     {ambient: 1, diffusivity: 1, color: hex_color("#B08040")}),
-            // planet4_mat: new Material(new defs.Phong_Shader(),
-            //     {ambient: 0, smoothness:40 , color: hex_color("#ADD8E6")}),
-            // moon_mat: new Material(new defs.Phong_Shader(),
-            //     {ambient: 0, color:hex_color("#FFFFFF"), specularity: 0})
+            road_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#303030"), specularity: 0 }),
+            road_stripe_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFFFF"), specularity: 0 }),
+            desert_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#E3CDA4"), specularity: 0 }),
+        };
 
-            road_mat: new Material(new defs.Phong_Shader(),
-            {ambient: 0.8, diffusivity: 0.5, color: hex_color("#303030"),specularity: 0}),
-            desert_mat: new Material(new defs.Phong_Shader(),
-            {ambient: 0.8, diffusivity: 0.5, color: hex_color("#E3CDA4"),specularity: 0}),
-            
-        }
+        this.constants = {
+            ROAD_MAX_DISTANCE: 150,
+            ROAD_MIN_DISTANCE: -90,
+            ROAD_WIDTH: 18,
+            STRIPE_WIDTH: 0.2,
+            STRIPE_LENGTH: 3,
+        };
 
-        this.initial_camera_location = Mat4.look_at(vec3(0, 5, -100), vec3(0, 0, 50), vec3(0, 1, 0));
+        this.game_state = {
+            SPEED: 1, // an arbitrary number that we use as a speed multiplier
+        };
+
+        this.initial_camera_location = Mat4.look_at(vec3(0, 5, this.constants.ROAD_MIN_DISTANCE), vec3(0, 10, 50), vec3(0, 1, 0));
     }
 
     make_control_panel() {
@@ -83,138 +54,59 @@ export class Final_Project extends Scene {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
         if (!context.scratchpad.controls) {
-            this.children.push(context.scratchpad.controls = new defs.Movement_Controls());
+            this.children.push((context.scratchpad.controls = new defs.Movement_Controls()));
             // Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(this.initial_camera_location);
         }
 
-        program_state.projection_transform = Mat4.perspective(
-            Math.PI / 4, context.width / context.height, .1, 1000);
+        program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 0.1, 1000);
 
         // TODO: Create Planets (Requirement 1)
         // this.shapes.[XXX].draw([XXX]) // <--example
-        
+
         // TODO: Lighting (Requirement 2)
         const light_position = vec4(0, 5, 5, 1);
         const sunlight_position = vec4(0, 0, 0, 1);
         // The parameters of the Light are: position, color, size
         program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
 
-        // TODO:  Fill in matrix operations and drawing code to draw the solar system scene (Requirements 3 and 4)
-        const t = program_state.animation_time / 1000, dt = program_state.animation_delta_time / 1000;
-        // const yellow = hex_color("#fac91a");
-        // let model_transform = Mat4.identity();
-
-
-        // //SUN STUFF
-        // const period = 10; // Period of 10 seconds for a full swell and shrink cycle
-        // const max_scale = 3;
-        // const min_scale = 1; 
-        // const scale_offset = (max_scale + min_scale) / 2; // Offset to ensure scale goes from 1 to 3
-
-        // const sun_scale_factor = scale_offset + Math.sin(((2 * Math.PI / period) * t) - 1.5);// added phase to make sure the function starts at red
-        // const color_interpolation_factor = (sun_scale_factor - min_scale) / (max_scale - min_scale);
-
-        // const sun_color = color(
-        //     1, 
-        //     color_interpolation_factor, 
-        //     color_interpolation_factor, 
-        //     1
-        // );
-        // //Sun Light stuff
-        // program_state.lights = [new Light(sunlight_position, sun_color, 10**sun_scale_factor)];
-        // // Apply the scale transformation to the sun
-        // let sun_transform = Mat4.identity().times(Mat4.scale(sun_scale_factor, sun_scale_factor, sun_scale_factor));
-        
-        // //this.shapes.torus.draw(context, program_state, model_transform, this.materials.test.override({color: yellow}));
-        // this.shapes.sun.draw(context, program_state, sun_transform, this.materials.sun_mat.override({color: sun_color}));
-
-        // //Planet 1 stuff
-        // let planet1_transform = Mat4.identity();
-        // let planet1_color = hex_color('#808080'); //grey
-        // let x1 = -5*Math.cos(t*1);
-        // let z1 = 5*Math.sin(t*1);
-        // let y1 = 0;
-        // let planet1_orbit = Mat4.identity().times(Mat4.translation(x1,y1,z1));
-        // this.shapes.planet1.draw(context, program_state, planet1_transform.times(planet1_orbit), this.materials.planet1_mat.override({color: planet1_color}));
-        
-        // //Planet 2 stuff
-        // let planet2_transform = Mat4.identity();
-        // let planet2_color = hex_color('#80FFFF');
-        // let x2 = -9*Math.cos(t*0.75);
-        // let z2 = 9*Math.sin(t*0.75);
-        // let y2 = 0;
-        // let planet2_orbit = Mat4.identity().times(Mat4.translation(x2,y2,z2));
-        // if(Math.floor(t) % 2 === 0) {
-        //     this.shapes.planet2.draw(context, program_state, planet2_transform.times(planet2_orbit), this.materials.planet2_mat_phong.override({color: planet2_color}));
-        // } else {
-        //     this.shapes.planet2.draw(context, program_state, planet2_transform.times(planet2_orbit), this.materials.planet2_mat_gouraud.override({color: planet2_color}));
-        // }
-        // //Planet 3 stuff
-        // let planet3_transform = Mat4.identity();
-        // let planet3_color = hex_color('#B08040');
-        // let x3 = -13*Math.cos(t*0.5);
-        // let z3 = 13*Math.sin(t*0.5);
-        // let y3 = 0;
-        // let planet3_orbit = Mat4.identity().times(Mat4.translation(x3,y3,z3));
-        // let planet3_pos = planet3_transform.times(planet3_orbit)
-        // this.shapes.planet3.draw(context, program_state, planet3_pos, this.materials.planet3_mat.override({color: planet3_color}));
-        // let ring_transform  = planet3_pos.times(Mat4.scale(3.0,3.0, 0.1))
-        // this.shapes.ring.draw(context,program_state, ring_transform, this.materials.ring_mat.override({color: planet3_color}));
-        
-        // //Planet 4 stuff
-        // let planet4_transform = Mat4.identity();
-        // let planet4_color = hex_color('#ADD8E6'); 
-        // let x4 = -17*Math.cos(t*0.25);
-        // let z4 = 17*Math.sin(t*0.25);
-        // let y4 = 0;
-        // let planet4_orbit = Mat4.identity().times(Mat4.translation(x4,y4,z4));
-
-        // this.shapes.planet4.draw(context, program_state, planet4_transform.times(planet4_orbit), this.materials.planet4_mat.override({color: planet4_color}));
-        
-        // // Moon stuff
-        // let moon_transform = Mat4.identity();
-        // let xm = -2*Math.cos(t);
-        // let ym = 0
-        // let zm = 2*Math.sin(t);
-        // let moon_orbit = planet4_orbit.times(Mat4.translation(xm,ym,zm))
-        // moon_transform = moon_orbit.times(Mat4.scale(0.5,0.5,0.5))
-        // this.shapes.moon.draw(context, program_state, moon_transform, this.materials.moon_mat);
-
-        // this.planet_1 = planet1_transform.times(planet1_orbit).times(Mat4.translation(0, 0, 5));
-        // this.planet_2 = planet2_transform.times(planet2_orbit).times(Mat4.translation(0, 0, 5));
-        // this.planet_3 = planet3_transform.times(planet3_orbit).times(Mat4.translation(0, 0, 5));
-        // this.planet_4 = planet4_transform.times(planet4_orbit).times(Mat4.translation(0, 0, 5));
-        // this.moon = moon_transform.times(Mat4.translation(0, 0, 5));
-        // this.solar_system = Mat4.inverse(this.initial_camera_location);
-
-        // if (this.attached !== undefined) {
-        //     const desired = Mat4.inverse(this.attached());
-        //     const blending_factor = 0.1;
-        //     program_state.set_camera(desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, blending_factor)));
-            
-        // }
-
-        // Road stuff
+        // Road
         let road_transform = Mat4.identity();
-        let road_color = hex_color('#303030');
-        road_transform = Mat4.identity().times(Mat4.scale(9,1,150));
-        this.shapes.road.draw(context, program_state, road_transform, this.materials.road_mat.override({color: road_color}));
+        road_transform = Mat4.identity().times(Mat4.scale(this.constants.ROAD_WIDTH / 2, 1, this.constants.ROAD_MAX_DISTANCE));
+        this.shapes.road.draw(context, program_state, road_transform, this.materials.road_mat);
 
-        //desert stuff
+        // Road stripes
+        let i = 0;
+        const stripePlusGapLength = this.constants.STRIPE_LENGTH * 3;
+        while (true) {
+            const initialStripePosition = stripePlusGapLength * i + this.constants.ROAD_MIN_DISTANCE;
+            const stripeOffset = program_state.animation_time / 30;
+            const stripePosition = initialStripePosition - (stripeOffset % stripePlusGapLength);
+
+            i += 1;
+
+            if (stripePosition > this.constants.ROAD_MAX_DISTANCE) {
+                break;
+            }
+
+            let stripe_right_transform = Mat4.identity();
+            stripe_right_transform = Mat4.identity().times(Mat4.translation(-3, 0.01, stripePosition));
+            stripe_right_transform = stripe_right_transform.times(Mat4.scale(this.constants.STRIPE_WIDTH, 1, this.constants.STRIPE_LENGTH));
+            this.shapes.road_stripe.draw(context, program_state, stripe_right_transform, this.materials.road_stripe_mat);
+
+            let stripe_left_transform = Mat4.identity();
+            stripe_left_transform = Mat4.identity().times(Mat4.translation(3, 0.01, stripePosition));
+            stripe_left_transform = stripe_left_transform.times(Mat4.scale(this.constants.STRIPE_WIDTH, 1, this.constants.STRIPE_LENGTH));
+            this.shapes.road_stripe.draw(context, program_state, stripe_left_transform, this.materials.road_stripe_mat);
+        }
+
+        //desert
         let side1_transform = Mat4.identity();
-        let desert_color = hex_color('#E3CDA4');
-        side1_transform = Mat4.identity().times(Mat4.translation(1,-0.01,0));
-        side1_transform = side1_transform.times(Mat4.scale(250,1,150));
-        this.shapes.desert.draw(context, program_state, side1_transform, this.materials.desert_mat.override({color: desert_color}));
-        
-        // let side2_transform = Mat4.identity();
-        // side2_transform = Mat4.identity().times(Mat4.scale(1,1,150));
-        //this.shapes.desert.draw(context, program_state, side2_transform, this.materials.desert_mat.override({color: desert_color}));
-
+        side1_transform = Mat4.identity().times(Mat4.translation(1, -0.01, 0));
+        side1_transform = side1_transform.times(Mat4.scale(250, 1, 150));
+        this.shapes.desert.draw(context, program_state, side1_transform, this.materials.desert_mat);
     }
 }
-
 
 class Gouraud_Shader extends Shader {
     // This is a Shader using Phong_Shader as template
@@ -227,9 +119,12 @@ class Gouraud_Shader extends Shader {
 
     shared_glsl_code() {
         // ********* SHARED CODE, INCLUDED IN BOTH SHADERS *********
-        return ` 
+        return (
+            ` 
         precision mediump float;
-        const int N_LIGHTS = ` + this.num_lights + `;
+        const int N_LIGHTS = ` +
+            this.num_lights +
+            `;
         uniform float ambient, diffusivity, specularity, smoothness;
         uniform vec4 light_positions_or_vectors[N_LIGHTS], light_colors[N_LIGHTS];
         uniform float light_attenuation_factors[N_LIGHTS];
@@ -270,12 +165,15 @@ class Gouraud_Shader extends Shader {
                 result += attenuation * light_contribution;
             }
             return result;
-        } `;
+        } `
+        );
     }
 
     vertex_glsl_code() {
         // ********* VERTEX SHADER *********
-        return this.shared_glsl_code() + `
+        return (
+            this.shared_glsl_code() +
+            `
             attribute vec3 position, normal;                            
             // Position is expressed in object coordinates.
             
@@ -294,18 +192,22 @@ class Gouraud_Shader extends Shader {
                 vertex_color = vec4( shape_color.xyz * ambient, shape_color.w );
                 // Compute the final color with contributions from lights:
                 vertex_color.xyz += phong_model_lights( N , vertex_worldspace );
-            } `;
+            } `
+        );
     }
 
     fragment_glsl_code() {
         // ********* FRAGMENT SHADER *********
         // A fragment is a pixel that's overlapped by the current triangle.
         // Fragments affect the final image or get discarded due to depth.
-        return this.shared_glsl_code() + `
+        return (
+            this.shared_glsl_code() +
+            `
             void main(){                                                           
                 gl_FragColor = vertex_color;
                 //return;
-            } `;
+            } `
+        );
     }
 
     send_material(gl, gpu, material) {
@@ -320,13 +222,15 @@ class Gouraud_Shader extends Shader {
 
     send_gpu_state(gl, gpu, gpu_state, model_transform) {
         // send_gpu_state():  Send the state of our whole drawing context to the GPU.
-        const O = vec4(0, 0, 0, 1), camera_center = gpu_state.camera_transform.times(O).to3();
+        const O = vec4(0, 0, 0, 1),
+            camera_center = gpu_state.camera_transform.times(O).to3();
         gl.uniform3fv(gpu.camera_center, camera_center);
         // Use the squared scale trick from "Eric's blog" instead of inverse transpose matrix:
-        const squared_scale = model_transform.reduce(
-            (acc, r) => {
-                return acc.plus(vec4(...r).times_pairwise(r))
-            }, vec4(0, 0, 0, 0)).to3();
+        const squared_scale = model_transform
+            .reduce((acc, r) => {
+                return acc.plus(vec4(...r).times_pairwise(r));
+            }, vec4(0, 0, 0, 0))
+            .to3();
         gl.uniform3fv(gpu.squared_scale, squared_scale);
         // Send the current matrices to the shader.  Go ahead and pre-compute
         // the products we'll need of the of the three special matrices and just
@@ -338,17 +242,20 @@ class Gouraud_Shader extends Shader {
         gl.uniformMatrix4fv(gpu.projection_camera_model_transform, false, Matrix.flatten_2D_to_1D(PCM.transposed()));
 
         // Omitting lights will show only the material color, scaled by the ambient term:
-        if (!gpu_state.lights.length)
-            return;
+        if (!gpu_state.lights.length) return;
 
-        const light_positions_flattened = [], light_colors_flattened = [];
+        const light_positions_flattened = [],
+            light_colors_flattened = [];
         for (let i = 0; i < 4 * gpu_state.lights.length; i++) {
             light_positions_flattened.push(gpu_state.lights[Math.floor(i / 4)].position[i % 4]);
             light_colors_flattened.push(gpu_state.lights[Math.floor(i / 4)].color[i % 4]);
         }
         gl.uniform4fv(gpu.light_positions_or_vectors, light_positions_flattened);
         gl.uniform4fv(gpu.light_colors, light_colors_flattened);
-        gl.uniform1fv(gpu.light_attenuation_factors, gpu_state.lights.map(l => l.attenuation));
+        gl.uniform1fv(
+            gpu.light_attenuation_factors,
+            gpu_state.lights.map((l) => l.attenuation)
+        );
     }
 
     update_GPU(context, gpu_addresses, gpu_state, model_transform, material) {
@@ -359,7 +266,7 @@ class Gouraud_Shader extends Shader {
         // within this function, one data field at a time, to fully initialize the shader for a draw.
 
         // Fill in any missing fields in the Material object with custom defaults for this shader:
-        const defaults = {color: color(0, 0, 0, 1), ambient: 0, diffusivity: 1, specularity: 1, smoothness: 40};
+        const defaults = { color: color(0, 0, 0, 1), ambient: 0, diffusivity: 1, specularity: 1, smoothness: 40 };
         material = Object.assign({}, defaults, material);
 
         this.send_material(context, gpu_addresses, material);
@@ -373,8 +280,7 @@ class Ring_Shader extends Shader {
         const [P, C, M] = [graphics_state.projection_transform, graphics_state.camera_inverse, model_transform],
             PCM = P.times(C).times(M);
         context.uniformMatrix4fv(gpu_addresses.model_transform, false, Matrix.flatten_2D_to_1D(model_transform.transposed()));
-        context.uniformMatrix4fv(gpu_addresses.projection_camera_model_transform, false,
-            Matrix.flatten_2D_to_1D(PCM.transposed()));
+        context.uniformMatrix4fv(gpu_addresses.projection_camera_model_transform, false, Matrix.flatten_2D_to_1D(PCM.transposed()));
     }
 
     shared_glsl_code() {
@@ -389,7 +295,9 @@ class Ring_Shader extends Shader {
     vertex_glsl_code() {
         // ********* VERTEX SHADER *********
         // TODO:  Complete the main function of the vertex shader (Extra Credit Part II).
-        return this.shared_glsl_code() + `
+        return (
+            this.shared_glsl_code() +
+            `
         attribute vec3 position;
         uniform mat4 model_transform;
         uniform mat4 projection_camera_model_transform;
@@ -398,17 +306,20 @@ class Ring_Shader extends Shader {
             center = model_transform *vec4(0.0, 0.0,0.0 ,1.0);
             point_position = model_transform * vec4(position, 1.0);
             gl_Position = projection_camera_model_transform * vec4(position, 1.0);
-        }`;
+        }`
+        );
     }
 
     fragment_glsl_code() {
         // ********* FRAGMENT SHADER *********
         // TODO:  Complete the main function of the fragment shader (Extra Credit Part II).
-        return this.shared_glsl_code() + `
+        return (
+            this.shared_glsl_code() +
+            `
         void main(){
             float scalar = sin(18.09 * distance(point_position.xyz, center.xyz));
             gl_FragColor = scalar * vec4(0.6901, 0.502, 0.251, 1.0);
-        }`;
+        }`
+        );
     }
 }
-
