@@ -13,6 +13,7 @@ export class Final_Project extends Scene {
             road: new defs.Cube(),
             road_stripe: new defs.Cube(),
             desert: new defs.Cube(),
+            car: new defs.Cube(),
         };
 
         // *** Materials
@@ -20,6 +21,7 @@ export class Final_Project extends Scene {
             road_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#303030"), specularity: 0 }),
             road_stripe_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFFFF"), specularity: 0 }),
             desert_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#E3CDA4"), specularity: 0 }),
+            car_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#808080"), specularity: 0 }),
         };
 
         this.constants = {
@@ -31,7 +33,8 @@ export class Final_Project extends Scene {
         };
 
         this.game_state = {
-            SPEED: 1, // an arbitrary number that we use as a speed multiplier
+            SPEED: 1, // a multiplier, i.e. 1 means normal speed, 2 means double speed, etc.
+            CAR_LANE: 0, // -1 for left, 0 for center, 1 for right
         };
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 5, this.constants.ROAD_MIN_DISTANCE), vec3(0, 10, 50), vec3(0, 1, 0));
@@ -48,6 +51,12 @@ export class Final_Project extends Scene {
         // this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
         // this.new_line();
         // this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
+        this.key_triggered_button("Go right", ["ArrowRight"], () => {
+            this.game_state.CAR_LANE = Math.min(this.game_state.CAR_LANE + 1, 1);
+        });
+        this.key_triggered_button("Go left", ["ArrowLeft"], () => {
+            this.game_state.CAR_LANE = Math.max(this.game_state.CAR_LANE - 1, -1);
+        });
     }
 
     display(context, program_state) {
@@ -80,7 +89,7 @@ export class Final_Project extends Scene {
         const stripePlusGapLength = this.constants.STRIPE_LENGTH * 3;
         while (true) {
             const initialStripePosition = stripePlusGapLength * i + this.constants.ROAD_MIN_DISTANCE;
-            const stripeOffset = program_state.animation_time / 30;
+            const stripeOffset = (program_state.animation_time / 30) * this.game_state.SPEED;
             const stripePosition = initialStripePosition - (stripeOffset % stripePlusGapLength);
 
             i += 1;
@@ -99,6 +108,12 @@ export class Final_Project extends Scene {
             stripe_left_transform = stripe_left_transform.times(Mat4.scale(this.constants.STRIPE_WIDTH, 1, this.constants.STRIPE_LENGTH));
             this.shapes.road_stripe.draw(context, program_state, stripe_left_transform, this.materials.road_stripe_mat);
         }
+
+        // Car
+        let car_transform = Mat4.identity();
+        car_transform = Mat4.identity().times(Mat4.translation(-6 * this.game_state.CAR_LANE, 0.01, -75));
+        car_transform = car_transform.times(Mat4.scale(1.5, 2.5, 3));
+        this.shapes.car.draw(context, program_state, car_transform, this.materials.car_mat);
 
         //desert
         let side1_transform = Mat4.identity();
