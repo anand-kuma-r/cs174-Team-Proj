@@ -14,6 +14,7 @@ export class Final_Project extends Scene {
             road_stripe: new defs.Cube(),
             desert: new defs.Cube(),
             car: new defs.Cube(),
+            boost: new defs.Cube(),
         };
 
         // *** Materials
@@ -22,6 +23,8 @@ export class Final_Project extends Scene {
             road_stripe_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFFFF"), specularity: 0 }),
             desert_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#E3CDA4"), specularity: 0 }),
             car_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#808080"), specularity: 0 }),
+            boost_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#0096FF"), specularity: 0 }),
+            // TODO:  Fill in as many additional material objects as needed in this key/value table.
         };
 
         this.constants = {
@@ -30,11 +33,18 @@ export class Final_Project extends Scene {
             ROAD_WIDTH: 18,
             STRIPE_WIDTH: 0.2,
             STRIPE_LENGTH: 3,
+            BOOST_SIZE: 0.2,
         };
 
         this.game_state = {
             SPEED: 1, // a multiplier, i.e. 1 means normal speed, 2 means double speed, etc.
             CAR_LANE: 0, // -1 for left, 0 for center, 1 for right
+            BOOST_LANE: Math.floor(Math.random() * 3) - 1, // -1 for left, 0 for center, 1 for right
+            LAST_SPAWN_BOOST_TIME: 0, // Time of the last spawn
+            BOOST_SPAWN_FREQUENCY: 10 * 1000, // 10 seconds is frequncy of boosts spawning
+            BOOSTS: [], //stores the boosts
+            BOOST_DURATION: 1 * 1000, // 1 second is duration of boost
+            BOOST_SPEED_MULTIPLIER: 5, 
         };
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 5, this.constants.ROAD_MIN_DISTANCE), vec3(0, 10, 50), vec3(0, 1, 0));
@@ -115,11 +125,76 @@ export class Final_Project extends Scene {
         car_transform = car_transform.times(Mat4.scale(1.5, 2.5, 3));
         this.shapes.car.draw(context, program_state, car_transform, this.materials.car_mat);
 
+        let carPos = car_transform.times(vec4(0, 0, 0, 1)); // Multiply by a vector to get a vector
+        let carPosX = carPos[0];
+        let carPosY = carPos[1];
+        let carPosZ = carPos[2];
+
         //desert
         let side1_transform = Mat4.identity();
         side1_transform = Mat4.identity().times(Mat4.translation(1, -0.01, 0));
         side1_transform = side1_transform.times(Mat4.scale(250, 1, 150));
         this.shapes.desert.draw(context, program_state, side1_transform, this.materials.desert_mat);
+
+        //boost(Crystal boost)
+        if (program_state.animation_time - this.game_state.LAST_SPAWN_BOOST_TIME > this.game_state.BOOST_SPAWN_FREQUENCY) {
+            this.game_state.LAST_SPAWN_BOOST_TIME = program_state.animation_time;
+            const newBoost = {
+                lane: Math.floor(Math.random() * 3) - 1, // Choose a new lane for the boost
+                spawnTime: program_state.animation_time,
+            };
+            this.game_state.BOOSTS.push(newBoost); // Add the new boost to the array
+        }
+        for (const boost of this.game_state.BOOSTS) {
+            let boost_transform = Mat4.identity();
+            const boostSpeed = this.game_state.SPEED; // Assuming the speed is defined in the game state
+            const boostInitialPosition = 0; // The initial position of the boost
+            const boostOffset = (program_state.animation_time - boost.spawnTime) / 30 * boostSpeed;
+            const boostY = boostInitialPosition - boostOffset;
+            let boostX = boost.lane * 5; // Use the lane stored in the boost object
+            const boostZ = 2;
+        
+            boost_transform = Mat4.identity().times(Mat4.translation(boostX, boostZ, boostY));
+            boost_transform = boost_transform.times(Mat4.scale(this.constants.BOOST_SIZE,this.constants.BOOST_SIZE , this.constants.BOOST_SIZE));
+            this.shapes.boost.draw(context, program_state, boost_transform, this.materials.boost_mat);
+            let boostPos = boost_transform.times(vec4(0, 0, 0, 1)); // Multiply by a vector to get a vector
+            let boostPosX = boostPos[0];//get dimensions for the bounding boxes
+            let boostPosY = boostPos[1];
+            let boostPosZ = boostPos[2];
+
+            //boost collision detection
+            for (const boost of this.game_state.BOOSTS) {
+                // ...
+            
+                // Calculate the car's bounding box
+                const carMinX = carPosX - 1.5; // Assuming the car's width is 3
+                const carMaxX = carPosX + 1.5;
+                const carMinY = carPosY - 2.5; // Assuming the car's height is 5
+                const carMaxY = carPosY + 2.5;
+                const carMinZ = carPosZ - 3; // Assuming the car's depth is 6
+                const carMaxZ = carPosZ + 3;
+            
+                // Calculate the boost's bounding box
+                const boostMinX = boostPosX - this.constants.BOOST_SIZE;
+                const boostMaxX = boostPosX + this.constants.BOOST_SIZE;
+                const boostMinY = boostPosY - this.constants.BOOST_SIZE;
+                const boostMaxY = boostPosY + this.constants.BOOST_SIZE;
+                const boostMinZ = boostPosZ - this.constants.BOOST_SIZE;
+                const boostMaxZ = boostPosZ + this.constants.BOOST_SIZE;
+            
+                // Check if the bounding boxes intersect
+                if (carMinX <= boostMaxX && carMaxX >= boostMinX &&
+                    carMinY <= boostMaxY && carMaxY >= boostMinY &&
+                    carMinZ <= boostMaxZ && carMaxZ >= boostMinZ) {
+                    // A collision has occurred
+                    //console.log('Collision detected!');
+                    this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
+                    setTimeout(() => {
+                        this.game_state.SPEED = 1;//reset speed
+                    }, this.game_state.BOOST_DURATION);
+                }
+            }
+        }
     }
 }
 
@@ -170,7 +245,7 @@ class Gouraud_Shader extends Shader {
                 vec3 L = normalize( surface_to_light_vector );
                 vec3 H = normalize( L + E );
                 // Compute the diffuse and specular components from the Phong
-                // Reflection Model, using Blinn's "halfway vector" method:
+                // Reflection Model, using Blinn's "halfway vector" boostod:
                 float diffuse  =      max( dot( N, L ), 0.0 );
                 float specular = pow( max( dot( N, H ), 0.0 ), smoothness );
                 float attenuation = 1.0 / (1.0 + light_attenuation_factors[i] * distance_to_light * distance_to_light );
