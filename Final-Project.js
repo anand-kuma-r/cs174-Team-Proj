@@ -122,8 +122,8 @@ export class Final_Project extends Scene {
 
         // Car
         let car_transform = Mat4.identity();
-        car_transform = Mat4.identity().times(Mat4.translation(-6 * this.game_state.CAR_LANE, 2.75, -75));
-        car_transform = car_transform.times(Mat4.scale(1.5, 2.5, 3));
+        car_transform = Mat4.identity().times(Mat4.translation(-6 * this.game_state.CAR_LANE, 2.2, -75));
+        car_transform = car_transform.times(Mat4.scale(2, 2.5, 3));
         this.shapes.car.draw(context, program_state, car_transform, this.materials.car_mat);
 
         let carPos = car_transform.times(vec4(0, 0, 0, 1)); // Multiply by a vector to get a vector
