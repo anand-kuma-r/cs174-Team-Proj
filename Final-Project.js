@@ -1,5 +1,6 @@
 import { defs, tiny } from "./examples/common.js";
 
+import { Shape_From_File } from "./examples/obj-file-demo.js";
 const { Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene } = tiny;
 
 export class Final_Project extends Scene {
@@ -13,7 +14,7 @@ export class Final_Project extends Scene {
             road: new defs.Cube(),
             road_stripe: new defs.Cube(),
             desert: new defs.Cube(),
-            car: new defs.Cube(),
+            car: new Shape_From_File("assets/taxi.obj"),
             boost: new defs.Cube(),
         };
 
@@ -121,8 +122,8 @@ export class Final_Project extends Scene {
 
         // Car
         let car_transform = Mat4.identity();
-        car_transform = Mat4.identity().times(Mat4.translation(-6 * this.game_state.CAR_LANE, 0.01, -75));
-        car_transform = car_transform.times(Mat4.scale(1.5, 2.5, 3));
+        car_transform = Mat4.identity().times(Mat4.translation(-6 * this.game_state.CAR_LANE, 2.2, -75));
+        car_transform = car_transform.times(Mat4.scale(2, 2.5, 3));
         this.shapes.car.draw(context, program_state, car_transform, this.materials.car_mat);
 
         let carPos = car_transform.times(vec4(0, 0, 0, 1)); // Multiply by a vector to get a vector
