@@ -47,7 +47,7 @@ export class Final_Project extends Scene {
             BOOST_SPAWN_FREQUENCY: 10 * 1000, // 10 seconds is frequncy of boosts spawning
             BOOSTS: [], //stores the boosts
             BOOST_DURATION: 1 * 1000, // 1 second is duration of boost
-            BOOST_SPEED_MULTIPLIER: 5,
+            BOOST_SPEED_MULTIPLIER: 1.5,
             
             
             //For cars as obstacles generation
@@ -106,29 +106,8 @@ export class Final_Project extends Scene {
         this.shapes.road.draw(context, program_state, road_transform, this.materials.road_mat);
 
         // Road stripes
-        let i = 0;
-        const stripePlusGapLength = this.constants.STRIPE_LENGTH * 3;
-        while (true) {
-            const initialStripePosition = stripePlusGapLength * i + this.constants.ROAD_MIN_DISTANCE;
-            const stripeOffset = (program_state.animation_time / 30) * this.game_state.SPEED;
-            const stripePosition = initialStripePosition - (stripeOffset % stripePlusGapLength);
-
-            i += 1;
-
-            if (stripePosition > this.constants.ROAD_MAX_DISTANCE) {
-                break;
-            }
-
-            let stripe_right_transform = Mat4.identity();
-            stripe_right_transform = Mat4.identity().times(Mat4.translation(-3, 0.01, stripePosition));
-            stripe_right_transform = stripe_right_transform.times(Mat4.scale(this.constants.STRIPE_WIDTH, 1, this.constants.STRIPE_LENGTH));
-            this.shapes.road_stripe.draw(context, program_state, stripe_right_transform, this.materials.road_stripe_mat);
-
-            let stripe_left_transform = Mat4.identity();
-            stripe_left_transform = Mat4.identity().times(Mat4.translation(3, 0.01, stripePosition));
-            stripe_left_transform = stripe_left_transform.times(Mat4.scale(this.constants.STRIPE_WIDTH, 1, this.constants.STRIPE_LENGTH));
-            this.shapes.road_stripe.draw(context, program_state, stripe_left_transform, this.materials.road_stripe_mat);
-        }
+        this.draw_road_stripes(context, program_state);
+        
 
         // Car
         let car_transform = Mat4.identity();
@@ -149,7 +128,7 @@ export class Final_Project extends Scene {
 
 
         //other cars
-        this.update_spawn_cars();
+        this.update_spawn_cars(program_state);
         this.update_and_draw_other_cars(context, program_state);
 
 
@@ -208,21 +187,52 @@ export class Final_Project extends Scene {
                     // A collision has occurred
                     //console.log('Collision detected!');
                     this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
+                    this.game_state.OTHER_CAR_SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
+
                     setTimeout(() => {
                         this.game_state.SPEED = 1;//reset speed
+                        this.game_state.OTHER_CAR_SPEED = 0.5;
                     }, this.game_state.BOOST_DURATION);
                 }
             }
         }
         
     }
-    update_spawn_cars() {
-        const currentTime = performance.now();
+
+    draw_road_stripes(context, program_state)
+    {
+        let i = 0;
+        const stripePlusGapLength = this.constants.STRIPE_LENGTH * 3;
+        while (true) {
+            const initialStripePosition = stripePlusGapLength * i + this.constants.ROAD_MIN_DISTANCE;
+            const stripeOffset = (program_state.animation_time / 30) * this.game_state.SPEED;
+            const stripePosition = initialStripePosition - (stripeOffset % stripePlusGapLength);
+
+            i += 1;
+
+            if (stripePosition > this.constants.ROAD_MAX_DISTANCE) {
+                break;
+            }
+
+            let stripe_right_transform = Mat4.identity();
+            stripe_right_transform = Mat4.identity().times(Mat4.translation(-3, 0.01, stripePosition));
+            stripe_right_transform = stripe_right_transform.times(Mat4.scale(this.constants.STRIPE_WIDTH, 1, this.constants.STRIPE_LENGTH));
+            this.shapes.road_stripe.draw(context, program_state, stripe_right_transform, this.materials.road_stripe_mat);
+
+            let stripe_left_transform = Mat4.identity();
+            stripe_left_transform = Mat4.identity().times(Mat4.translation(3, 0.01, stripePosition));
+            stripe_left_transform = stripe_left_transform.times(Mat4.scale(this.constants.STRIPE_WIDTH, 1, this.constants.STRIPE_LENGTH));
+            this.shapes.road_stripe.draw(context, program_state, stripe_left_transform, this.materials.road_stripe_mat);
+        }
+    }
+
+    update_spawn_cars(program_state) {
+        const currentTime = program_state.animation_time;
         if (currentTime >= this.game_state.LAST_SPAWN_CAR_TIME + this.game_state.NEXT_SPAWN_TIME) {
             this.game_state.LAST_SPAWN_CAR_TIME = currentTime;
-            this.game_state.NEXT_SPAWN_TIME = 1000 + Math.random() * 4000; // Next spawn between 1 and 5 seconds
+            this.game_state.NEXT_SPAWN_TIME = 1000 + Math.random() * 4000; // Next spawn between 1 and 5 seconds (random, can change)
 
-            const numberOfCars = Math.floor(1 + Math.random() * 3); // 1 to 3 cars
+            const numberOfCars = Math.floor(1 + Math.random() * 2); // 1 to 2 cars (don't want to block all three lanes)
             let lanes = [-1, 0, 1];
             for (let i = 0; i < numberOfCars; i++) {
                 let laneIndex = Math.floor(Math.random() * lanes.length);
