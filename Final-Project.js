@@ -251,7 +251,7 @@ export class Final_Project extends Scene {
         for (const car of this.game_state.OTHER_CARS) {
             car.positionZ -= this.game_state.OTHER_CAR_SPEED * this.game_state.SPEED;
             if (car.positionZ > this.constants.ROAD_MIN_DISTANCE) {
-                let car_transform = Mat4.translation(car.lane * 6, 0.5, car.positionZ).times(Mat4.scale(2, 2, 4));
+                let car_transform = Mat4.translation(car.lane * 6, 2, car.positionZ).times(Mat4.scale(2, 2, 4));
                 this.shapes.car.draw(context, program_state, car_transform, this.materials.car_mat);
                 cars_to_keep.push(car);
             }
