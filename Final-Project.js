@@ -16,6 +16,7 @@ export class Final_Project extends Scene {
             desert: new defs.Cube(),
             car: new Shape_From_File("assets/taxi.obj"),
             boost: new defs.Cube(),
+            truck: new Shape_From_File("assets/truck.obj"),
         };
 
         // *** Materials
@@ -24,6 +25,7 @@ export class Final_Project extends Scene {
             road_stripe_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFFFF"), specularity: 0 }),
             desert_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#E3CDA4"), specularity: 0 }),
             car_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#808080"), specularity: 0 }),
+            truck_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#808080"), specularity: 0 }),
             boost_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#0096FF"), specularity: 0 }),
             // TODO:  Fill in as many additional material objects as needed in this key/value table.
         };
@@ -45,7 +47,15 @@ export class Final_Project extends Scene {
             BOOST_SPAWN_FREQUENCY: 10 * 1000, // 10 seconds is frequncy of boosts spawning
             BOOSTS: [], //stores the boosts
             BOOST_DURATION: 1 * 1000, // 1 second is duration of boost
-            BOOST_SPEED_MULTIPLIER: 5, 
+            BOOST_SPEED_MULTIPLIER: 5,
+            
+            
+            //For cars as obstacles generation
+            OTHER_CARS: [],
+            OTHER_CAR_SPAWN_FREQUENCY: 5000,
+            LAST_SPAWN_CAR_TIME: 0,
+            NEXT_SPAWN_TIME: 2000,
+            OTHER_CAR_SPEED: 0.5,
         };
 
         this.initial_camera_location = Mat4.look_at(vec3(0, 5, this.constants.ROAD_MIN_DISTANCE), vec3(0, 10, 50), vec3(0, 1, 0));
@@ -70,6 +80,8 @@ export class Final_Project extends Scene {
         });
     }
 
+
+
     display(context, program_state) {
         // display():  Called once per frame of animation.
         // Setup -- This part sets up the scene's overall camera matrix, projection matrix, and lights:
@@ -81,8 +93,6 @@ export class Final_Project extends Scene {
 
         program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 0.1, 1000);
 
-        // TODO: Create Planets (Requirement 1)
-        // this.shapes.[XXX].draw([XXX]) // <--example
 
         // TODO: Lighting (Requirement 2)
         const light_position = vec4(0, 5, 5, 1);
@@ -136,6 +146,14 @@ export class Final_Project extends Scene {
         side1_transform = Mat4.identity().times(Mat4.translation(1, -0.01, 0));
         side1_transform = side1_transform.times(Mat4.scale(250, 1, 150));
         this.shapes.desert.draw(context, program_state, side1_transform, this.materials.desert_mat);
+
+
+        //other cars
+        this.update_spawn_cars();
+        this.update_and_draw_other_cars(context, program_state);
+
+
+
 
         //boost(Crystal boost)
         if (program_state.animation_time - this.game_state.LAST_SPAWN_BOOST_TIME > this.game_state.BOOST_SPAWN_FREQUENCY) {
@@ -196,8 +214,43 @@ export class Final_Project extends Scene {
                 }
             }
         }
+        
+    }
+    update_spawn_cars() {
+        const currentTime = performance.now();
+        if (currentTime >= this.game_state.LAST_SPAWN_CAR_TIME + this.game_state.NEXT_SPAWN_TIME) {
+            this.game_state.LAST_SPAWN_CAR_TIME = currentTime;
+            this.game_state.NEXT_SPAWN_TIME = 1000 + Math.random() * 4000; // Next spawn between 1 and 5 seconds
+
+            const numberOfCars = Math.floor(1 + Math.random() * 3); // 1 to 3 cars
+            let lanes = [-1, 0, 1];
+            for (let i = 0; i < numberOfCars; i++) {
+                let laneIndex = Math.floor(Math.random() * lanes.length);
+                let lane = lanes.splice(laneIndex, 1)[0];
+                const newCar = {
+                    lane: lane,
+                    positionZ: this.constants.ROAD_MAX_DISTANCE,
+                };
+                this.game_state.OTHER_CARS.push(newCar);
+            }
+        }
+    }
+
+    update_and_draw_other_cars(context, program_state) {
+        let cars_to_keep = [];
+        for (const car of this.game_state.OTHER_CARS) {
+            car.positionZ -= this.game_state.OTHER_CAR_SPEED * this.game_state.SPEED;
+            if (car.positionZ > this.constants.ROAD_MIN_DISTANCE) {
+                let car_transform = Mat4.translation(car.lane * 6, 0.5, car.positionZ).times(Mat4.scale(2, 2, 4));
+                this.shapes.car.draw(context, program_state, car_transform, this.materials.car_mat);
+                cars_to_keep.push(car);
+            }
+        }
+        this.game_state.OTHER_CARS = cars_to_keep;
     }
 }
+
+
 
 class Gouraud_Shader extends Shader {
     // This is a Shader using Phong_Shader as template
