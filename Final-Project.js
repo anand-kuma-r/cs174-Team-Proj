@@ -14,7 +14,8 @@ export class Final_Project extends Scene {
             road: new defs.Cube(),
             road_stripe: new defs.Cube(),
             desert: new defs.Cube(),
-            car: new Shape_From_File("assets/taxi.obj"),
+            car: new Shape_From_File("assets/car.obj"),
+            taxi: new Shape_From_File("assets/taxi.obj"),
             boost: new defs.Cube(),
             truck: new Shape_From_File("assets/truck.obj"),
         };
@@ -24,7 +25,8 @@ export class Final_Project extends Scene {
             road_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#303030"), specularity: 0 }),
             road_stripe_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFFFF"), specularity: 0 }),
             desert_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#E3CDA4"), specularity: 0 }),
-            car_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#ffff00"), specularity: 0 }),
+            car_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#8b0000"), specularity: 0 }),
+            taxi_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#ffff00"), specularity: 0 }),
             truck_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#808080"), specularity: 0 }),
             boost_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#0096FF"), specularity: 0 }),
             // TODO:  Fill in as many additional material objects as needed in this key/value table.
@@ -62,16 +64,7 @@ export class Final_Project extends Scene {
     }
 
     make_control_panel() {
-        // Draw the scene's buttons, setup their actions and keyboard shortcuts, and monitor live measurements.
-        // this.key_triggered_button("View solar system", ["Control", "0"], () => this.attached = () => this.solar_system);
-        // this.new_line();
-        // this.key_triggered_button("Attach to planet 1", ["Control", "1"], () => this.attached = () => this.planet_1);
-        // this.key_triggered_button("Attach to planet 2", ["Control", "2"], () => this.attached = () => this.planet_2);
-        // this.new_line();
-        // this.key_triggered_button("Attach to planet 3", ["Control", "3"], () => this.attached = () => this.planet_3);
-        // this.key_triggered_button("Attach to planet 4", ["Control", "4"], () => this.attached = () => this.planet_4);
-        // this.new_line();
-        // this.key_triggered_button("Attach to moon", ["Control", "m"], () => this.attached = () => this.moon);
+
         this.key_triggered_button("Go right", ["ArrowRight"], () => {
             this.game_state.CAR_LANE = Math.min(this.game_state.CAR_LANE + 1, 1);
         });
@@ -113,7 +106,7 @@ export class Final_Project extends Scene {
         let car_transform = Mat4.identity();
         car_transform = Mat4.identity().times(Mat4.translation(-6 * this.game_state.CAR_LANE, 2.2, -75));
         car_transform = car_transform.times(Mat4.scale(2, 2.5, 3));
-        this.shapes.car.draw(context, program_state, car_transform, this.materials.car_mat);
+        this.shapes.taxi.draw(context, program_state, car_transform, this.materials.taxi_mat);
 
         let carPos = car_transform.times(vec4(0, 0, 0, 1)); // Multiply by a vector to get a vector
         let carPosX = carPos[0];
@@ -187,10 +180,12 @@ export class Final_Project extends Scene {
                     // A collision has occurred
                     //console.log('Collision detected!');
                     this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
+                    this.game_state.OTHER_CAR_SPEED = this.game_state.BOOST_SPEED_MULTIPLIER;
 
                     setTimeout(() => {
                         this.game_state.SPEED = 1;//reset speed
                         this.game_state.OTHER_CAR_SPEED = 0.5;
+
                     }, this.game_state.BOOST_DURATION);
                 }
             }
@@ -236,7 +231,9 @@ export class Final_Project extends Scene {
             for (let i = 0; i < numberOfCars; i++) {
                 let laneIndex = Math.floor(Math.random() * lanes.length);
                 let lane = lanes.splice(laneIndex, 1)[0];
+                let vehicleType = Math.random() < 0.5? 'car': 'truck';
                 const newCar = {
+                    type: vehicleType,
                     lane: lane,
                     positionZ: this.constants.ROAD_MAX_DISTANCE,
                 };
@@ -248,10 +245,18 @@ export class Final_Project extends Scene {
     update_and_draw_other_cars(context, program_state) {
         let cars_to_keep = [];
         for (const car of this.game_state.OTHER_CARS) {
-            car.positionZ -= this.game_state.OTHER_CAR_SPEED * this.game_state.SPEED;
+            car.positionZ -= this.game_state.OTHER_CAR_SPEED;
             if (car.positionZ > this.constants.ROAD_MIN_DISTANCE) {
-                let car_transform = Mat4.translation(car.lane * 6, 2, car.positionZ).times(Mat4.scale(2, 2, 4));
-                this.shapes.car.draw(context, program_state, car_transform, this.materials.car_mat);
+                let car_transform = Mat4.translation(car.lane * 6, 1.5, car.positionZ);
+                if (car.type == 'car'){
+                    car_transform = car_transform.times(Mat4.scale(2, 2, 4));
+                    this.shapes.car.draw(context, program_state, car_transform, this.materials.car_mat);
+                }
+                else if (car.type == 'truck'){
+                    car_transform = car_transform.times(Mat4.scale(2, 3, 6));
+                    this.shapes.truck.draw(context, program_state, car_transform, this.materials.truck_mat);
+                }
+                
                 cars_to_keep.push(car);
             }
         }
