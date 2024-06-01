@@ -24,7 +24,7 @@ export class Final_Project extends Scene {
             road_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#303030"), specularity: 0 }),
             road_stripe_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFFFF"), specularity: 0 }),
             desert_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#E3CDA4"), specularity: 0 }),
-            car_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#808080"), specularity: 0 }),
+            car_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#ffff00"), specularity: 0 }),
             truck_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#808080"), specularity: 0 }),
             boost_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#0096FF"), specularity: 0 }),
             // TODO:  Fill in as many additional material objects as needed in this key/value table.
@@ -47,7 +47,7 @@ export class Final_Project extends Scene {
             BOOST_SPAWN_FREQUENCY: 10 * 1000, // 10 seconds is frequncy of boosts spawning
             BOOSTS: [], //stores the boosts
             BOOST_DURATION: 1 * 1000, // 1 second is duration of boost
-            BOOST_SPEED_MULTIPLIER: 1.5,
+            BOOST_SPEED_MULTIPLIER: 2,
             
             
             //For cars as obstacles generation
@@ -187,7 +187,6 @@ export class Final_Project extends Scene {
                     // A collision has occurred
                     //console.log('Collision detected!');
                     this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
-                    this.game_state.OTHER_CAR_SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
 
                     setTimeout(() => {
                         this.game_state.SPEED = 1;//reset speed
