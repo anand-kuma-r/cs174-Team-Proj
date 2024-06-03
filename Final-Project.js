@@ -24,6 +24,7 @@ export class Final_Project extends Scene {
             car: new Shape_From_File("assets/car.obj"),//Car blender model (obstacle)
             truck: new Shape_From_File("assets/truck.obj"), // Truck blender model (obstacle)
             boost: new defs.Cube(),
+            heart: new Shape_From_File("assets/heart.obj"), // Heart blender model
         };
     }
 
@@ -36,6 +37,7 @@ export class Final_Project extends Scene {
             car_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#8b0000"), specularity: 0 }),
             truck_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#808080"), specularity: 0 }),
             boost_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#0096FF"), specularity: 0 }),
+            heart_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#8b0000"), specularity: 0 }),
         };
     }
 
@@ -114,6 +116,7 @@ export class Final_Project extends Scene {
         //Draw the Road and stripes
         this.draw_road(context, program_state);
         this.draw_road_stripes(context, program_state);
+
         //Draw the taxi and surroundings
         this.draw_car(context, program_state);
         this.draw_desert(context, program_state);
@@ -127,6 +130,9 @@ export class Final_Project extends Scene {
         //Draw speed boosts
         this.update_and_draw_boosts(context, program_state);
         //console.log(this.game_state.LIVES_LEFT);
+
+        //Draw Lives in top Right
+        this.draw_hearts(context, program_state);
     }
 
     draw_road(context, program_state) {
@@ -162,6 +168,20 @@ export class Final_Project extends Scene {
     draw_desert(context, program_state) {
         let side1_transform = Mat4.translation(1, -0.01, 0).times(Mat4.scale(250, 1, 150));
         this.shapes.desert.draw(context, program_state, side1_transform, this.materials.desert_mat);
+    }
+
+    draw_hearts(context, program_state) {
+        const heart_scale = 2;
+        const heart_offset_x = 6;
+        const heart_offset_y = 0.5;
+        const initial_heart_position = vec3(-30, 30, -25); 
+
+        for (let i = 0; i < this.game_state.LIVES_LEFT; i++) {
+            let heart_transform = Mat4.identity()
+                .times(Mat4.translation(initial_heart_position[0] + i * heart_offset_x, initial_heart_position[1] - heart_offset_y, initial_heart_position[2]))
+                .times(Mat4.scale(heart_scale, heart_scale, heart_scale));
+            this.shapes.heart.draw(context, program_state, heart_transform, this.materials.heart_mat);
+        }
     }
 
     spawn_cars(program_state) {
