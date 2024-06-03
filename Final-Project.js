@@ -11,6 +11,8 @@ export class Final_Project extends Scene {
         this.initialize_constants();
         this.initialize_game_state();
         this.initial_camera_location = Mat4.look_at(vec3(0, 5, this.constants.ROAD_MIN_DISTANCE), vec3(0, 10, 50), vec3(0, 1, 0));
+        this.person_camera_location = Mat4.look_at(vec3(0, 2.5, -76), vec3(0, 2.5, -75), vec3(0, 1, 0));
+        this.perspective_person = false;
     }
 
     initialize_shapes() {
@@ -75,11 +77,33 @@ export class Final_Project extends Scene {
         this.key_triggered_button("Go left", ["ArrowLeft"], () => {
             this.game_state.CAR_LANE = Math.max(this.game_state.CAR_LANE - 1, -1);
         });
+        this.key_triggered_button("Switch Perspective", ["p"], () => {
+            this.perspective_person ^=1;
+        })
     }
 
     display(context, program_state) {
         if (!context.scratchpad.controls) {
             this.children.push((context.scratchpad.controls = new defs.Movement_Controls()));
+        }
+
+        let car_transform = Mat4.translation(-6 * this.game_state.CAR_LANE, 2.2, -75);
+        let car_position = car_transform.times(vec4(0, 0, 0, 1));
+        
+        if (this.perspective_person == 1) {
+            // Camera slightly ahead of car
+            const camera_offset = vec4(0, 1.5, 1.42, 0); // Can change z value if we don't like the slight outline of car right now
+            let camera_position = car_position.plus(camera_offset);
+
+            // Camera looks slightly ahead of car
+            let target_position = car_position.plus(vec4(0, 2, 10, 0));
+            //console.log(target_position);
+
+            this.person_camera_location = Mat4.look_at(camera_position.to3(), target_position.to3(), vec3(0, 1, 0));
+            program_state.set_camera(this.person_camera_location);
+        }
+        else
+        {
             program_state.set_camera(this.initial_camera_location);
         }
 
@@ -102,7 +126,7 @@ export class Final_Project extends Scene {
         //Add power ups to road
         //Draw speed boosts
         this.update_and_draw_boosts(context, program_state);
-        console.log(this.game_state.LIVES_LEFT);
+        //console.log(this.game_state.LIVES_LEFT);
     }
 
     draw_road(context, program_state) {
