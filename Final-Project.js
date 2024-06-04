@@ -24,7 +24,8 @@ export class Final_Project extends Scene {
             car: new Shape_From_File("assets/car.obj"),//Car blender model (obstacle)
             truck: new Shape_From_File("assets/truck.obj"), // Truck blender model (obstacle)
             boost: new defs.Cube(),
-            heart: new Shape_From_File("assets/heart.obj"), // Heart blender model
+            heart: new Shape_From_File("assets/heart.obj"), // Heart blender model,
+            sugar_boost: new defs.Cube(),
         };
     }
 
@@ -38,6 +39,7 @@ export class Final_Project extends Scene {
             truck_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#808080"), specularity: 0 }),
             boost_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#0096FF"), specularity: 0 }),
             heart_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#8b0000"), specularity: 0 }),
+            sugar_boost_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#ffffff"), specularity: 0 }),
         };
     }
 
@@ -69,6 +71,10 @@ export class Final_Project extends Scene {
             OTHER_CAR_SPEED: 0.5,
             LIVES_LEFT: 3,
             collisionInProgress: false,
+            sugar_active: false,
+            sugar_start: 0,
+            SUGAR_BOOST_DURATION: 15 * 1000,
+            invincible: false, 
         };
     }
 
@@ -193,7 +199,7 @@ export class Final_Project extends Scene {
             const numberOfCars = Math.floor(1 + Math.random() * 2); // random number of cars generated at this moment between 1-2
             let lanes = [-1, 0, 1]; // -1 -> left, 0 -> middle, 1 -> right
             for (let i = 0; i < numberOfCars; i++) {
-                if (lanes.length === 0) break;
+                if (lanes.length == 0) break;
                 let laneIndex = Math.floor(Math.random() * lanes.length); // Choose random lane for car to spawn in
                 let lane = lanes.splice(laneIndex, 1)[0]; // Get the lane number 
                 let vehicleType = Math.random() < 0.25 ? 'truck' : 'car'; // Choose obstacle to spawn in (truck or car)
@@ -232,20 +238,32 @@ export class Final_Project extends Scene {
             const newBoost = {
                 lane: Math.floor(Math.random() * 3) - 1,
                 spawnTime: program_state.animation_time,
+                type: Math.random() < 0.8? 'boost': 'sugar_boost',
             };
             this.game_state.BOOSTS.push(newBoost);
         }
+
+        let boosts_to_keep = [];
         for (const boost of this.game_state.BOOSTS) {
             let boost_transform = Mat4.translation(boost.lane * 5, 2, this.constants.ROAD_MAX_DISTANCE - ((program_state.animation_time - boost.spawnTime) / 30 * this.game_state.SPEED));
             boost_transform = boost_transform.times(Mat4.scale(this.constants.BOOST_SIZE, this.constants.BOOST_SIZE, this.constants.BOOST_SIZE));
-            this.shapes.boost.draw(context, program_state, boost_transform, this.materials.boost_mat);
+            let material = boost.type == 'boost'? this.materials.boost_mat : this.materials.sugar_boost_mat;
+            //console.log(material);
+            this.shapes.boost.draw(context, program_state, boost_transform, material);
 
             let boostPos = boost_transform.times(vec4(0, 0, 0, 1));
-            this.check_boost_collision(boostPos);
+            if (boostPos[2] > this.constants.ROAD_MIN_DISTANCE) {
+                if (!this.check_boost_collision(boostPos, boost.type)){
+                    boosts_to_keep.push(boost);
+                }
+            }
         }
+        this.game_state.BOOSTS = boosts_to_keep;
     }
 
-    check_boost_collision(boostPos) {
+
+
+    check_boost_collision(boostPos, type) {
         let boostPosX = boostPos[0];
         let boostPosY = boostPos[1];
         let boostPosZ = boostPos[2];
@@ -267,15 +285,45 @@ export class Final_Project extends Scene {
         if (carMinX <= boostMaxX && carMaxX >= boostMinX &&
             carMinY <= boostMaxY && carMaxY >= boostMinY &&
             carMinZ <= boostMaxZ && carMaxZ >= boostMinZ) {
-            this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
-            this.game_state.OTHER_CAR_SPEED = this.game_state.BOOST_SPEED_MULTIPLIER;
+            console.log(type);
+            if (type == 'boost') {
+                this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
+                this.game_state.OTHER_CAR_SPEED = this.game_state.BOOST_SPEED_MULTIPLIER;
 
+                setTimeout(() => {
+                    this.game_state.SPEED = 1;
+                    this.game_state.OTHER_CAR_SPEED = 0.5;
+                }, this.game_state.BOOST_DURATION);
+            }
+            else if (type == 'sugar_boost') {
+                this.activate_sugar_boost();  
+            }
+
+
+        }
+    }
+
+    activate_sugar_boost() {
+        this.game_state.invincible = true;
+        this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
+        this.game_state.OTHER_CAR_SPEED = this.game_state.BOOST_SPEED_MULTIPLIER; 
+
+        setTimeout(() => {
+            this.game_state.SPEED = 1;
+            this.game_state.OTHER_CAR_SPEED = 0.5;
+            this.game_state.invincible = false;
+        }, 7000); // 7 seconds of invincibility 
+
+        setTimeout(() => {
+            this.game_state.SPEED *= 0.5;
             setTimeout(() => {
                 this.game_state.SPEED = 1;
                 this.game_state.OTHER_CAR_SPEED = 0.5;
-            }, this.game_state.BOOST_DURATION);
-        }
+            }, 5000);
+        }, 7000);
+
     }
+
 
     check_car_collisions(program_state) {
         const carMinX = this.carPos[0] - 1.5;
@@ -315,7 +363,7 @@ export class Final_Project extends Scene {
             if (carMinX <= otherCarMaxX && carMaxX >= otherCarMinX &&
                 carMinY <= otherCarMaxY && carMaxY >= otherCarMinY &&
                 carMinZ <= otherCarMaxZ && carMaxZ >= otherCarMinZ) {
-                if(!this.game_state.collisionInProgress)
+                if(!this.game_state.collisionInProgress && !this.game_state.invincible)
                 {
                     this.game_state.collisionInProgress = true;
                     this.game_state.LIVES_LEFT -=1;
