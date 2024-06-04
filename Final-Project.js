@@ -25,6 +25,8 @@ export class Final_Project extends Scene {
             truck: new Shape_From_File("assets/truck.obj"), // Truck blender model (obstacle)
             boost: new defs.Cube(),
             heart: new Shape_From_File("assets/heart.obj"), // Heart blender model
+            banana: new Shape_From_File("assets/bananapeel.obj"), // Banana model
+
         };
     }
 
@@ -38,6 +40,7 @@ export class Final_Project extends Scene {
             truck_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#808080"), specularity: 0 }),
             boost_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#0096FF"), specularity: 0 }),
             heart_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#8b0000"), specularity: 0 }),
+            banana_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFF00"), specularity: 0 }),
         };
     }
 
@@ -56,6 +59,7 @@ export class Final_Project extends Scene {
         this.game_state = {
             SPEED: 1,
             CAR_LANE: 0,
+            CAR_SPIN: 0,
             BOOST_LANE: Math.floor(Math.random() * 3) - 1,
             LAST_SPAWN_BOOST_TIME: 0,
             BOOST_SPAWN_FREQUENCY: 10 * 1000,
@@ -69,6 +73,11 @@ export class Final_Project extends Scene {
             OTHER_CAR_SPEED: 0.5,
             LIVES_LEFT: 3,
             collisionInProgress: false,
+            BANANAS: [],
+            LAST_SPAWN_BANANA_TIME: 0,
+            BANANA_SPAWN_FREQUENCY: 10 * 1000,
+            SPIN_DURATION: 2 * 1000,
+            SPIN_START_TIME: 0,
         };
     }
 
@@ -89,30 +98,10 @@ export class Final_Project extends Scene {
             this.children.push((context.scratchpad.controls = new defs.Movement_Controls()));
         }
 
-        let car_transform = Mat4.translation(-6 * this.game_state.CAR_LANE, 2.2, -75);
-        let car_position = car_transform.times(vec4(0, 0, 0, 1));
+        // Update the camera
+        this.update_camera(context, program_state);
+
         
-        if (this.perspective_person == 1) {
-            // Camera slightly ahead of car
-            const camera_offset = vec4(0, 1.5, 1.42, 0); // Can change z value if we don't like the slight outline of car right now
-            let camera_position = car_position.plus(camera_offset);
-
-            // Camera looks slightly ahead of car
-            let target_position = car_position.plus(vec4(0, 2, 10, 0));
-            //console.log(target_position);
-
-            this.person_camera_location = Mat4.look_at(camera_position.to3(), target_position.to3(), vec3(0, 1, 0));
-            program_state.set_camera(this.person_camera_location);
-        }
-        else
-        {
-            program_state.set_camera(this.initial_camera_location);
-        }
-
-        program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 0.1, 1000);
-        const light_position = vec4(0, 5, 5, 1);
-        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
-
         //Draw the Road and stripes
         this.draw_road(context, program_state);
         this.draw_road_stripes(context, program_state);
@@ -130,9 +119,82 @@ export class Final_Project extends Scene {
         //Draw speed boosts
         this.update_and_draw_boosts(context, program_state);
         //console.log(this.game_state.LIVES_LEFT);
+        this.spawn_bananas(program_state);
+        this.update_and_draw_bananas(context, program_state);
+        this.check_banana_collisions(program_state);
 
         //Draw Lives in top Right
         this.draw_hearts(context, program_state);
+    }
+        
+    update_camera(context, program_state) {
+        let car_transform = Mat4.translation(-6 * this.game_state.CAR_LANE, 2.2, -75);
+        let car_position = car_transform.times(vec4(0, 0, 0, 1));
+    
+        // Define the initial view direction (positive z direction)
+        let initial_view_direction = vec3(-1, 0, 0);
+    
+        // Define a variable to store the initial rotation angle
+        if (this.initial_rotation_angle === undefined) {
+            this.initial_rotation_angle = 0;
+        }
+    
+        if (this.perspective_person) {
+            // Camera slightly ahead of car
+            const camera_offset = vec4(0, 1.5, 1.42, 0);
+            let camera_position = car_position.plus(camera_offset);
+            let target_position = car_position.plus(vec4(0, 0, 0, 0));
+    
+            // Adjust this value to control the distance of the camera from the car during rotation
+            let rotation_radius = 5;
+    
+            // Apply rotation if car is spinning (This is Currently a work in progress)
+            if (this.game_state.CAR_SPIN != 0) {
+
+
+
+                // Store the initial rotation angle when the spin starts
+                if (!this.spin_start_time) {
+                    this.spin_start_time = program_state.animation_time;
+                    this.initial_rotation_angle = Math.atan2(initial_view_direction[0], initial_view_direction[2]);
+                }
+    
+                let rotation_angle = this.initial_rotation_angle + this.game_state.CAR_SPIN * (program_state.animation_time - this.spin_start_time) / 1000;
+    
+                // Calculate new camera position for 360-degree rotation around the car
+                
+                camera_position = camera_position.plus(vec4(1, 2, 0, 0));
+    
+                // Calculate new target position for 360-degree rotation around the car
+                let target_x = car_position[0] + rotation_radius * Math.sin(rotation_angle + Math.PI / 2);
+                let target_z = car_position[2] + rotation_radius * Math.cos(rotation_angle + Math.PI / 2);
+                target_position = vec4(target_x, camera_position[1], target_z, 1); // Slightly ahead of the car
+
+
+            } else {
+                // Reset initial camera and target positions when the spin is 0
+                this.spin_start_time = null;
+                this.initial_rotation_angle = 0;
+    
+                // Camera looks slightly ahead of car
+                target_position = car_position.plus(vec4(0, 2, 10, 0));
+            }
+    
+            // Check for parallel vectors
+            let direction = target_position.minus(camera_position).to3();
+            if (Math.abs(direction[0]) < 0.0001 && Math.abs(direction[2]) < 0.0001) {
+                target_position = target_position.plus(vec4(0.01, 0, 0.01, 0));
+            }
+    
+            this.person_camera_location = Mat4.look_at(camera_position.to3(), target_position.to3(), vec3(0, 1, 0));
+            program_state.set_camera(this.person_camera_location);
+        } else {
+            program_state.set_camera(this.initial_camera_location);
+        }
+    
+        program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 0.1, 1000);
+        const light_position = vec4(0, 5, 5, 1);
+        program_state.lights = [new Light(light_position, color(1, 1, 1, 1), 1000)];
     }
 
     draw_road(context, program_state) {
@@ -160,7 +222,9 @@ export class Final_Project extends Scene {
     }
 
     draw_car(context, program_state) {
-        let car_transform = Mat4.translation(-6 * this.game_state.CAR_LANE, 2.2, -75).times(Mat4.scale(2, 2.5, 3));
+        let car_transform = Mat4.translation(-6 * this.game_state.CAR_LANE, 2.2, -75)
+            .times(Mat4.rotation(this.game_state.CAR_SPIN * (program_state.animation_time - this.game_state.SPIN_START_TIME) / 1000, 0, 1, 0)) // Apply rotation
+            .times(Mat4.scale(2, 2.5, 3));
         this.shapes.taxi.draw(context, program_state, car_transform, this.materials.taxi_mat);
         this.carPos = car_transform.times(vec4(0, 0, 0, 1));
     }
@@ -206,7 +270,26 @@ export class Final_Project extends Scene {
             }
         }
     }
-
+    spawn_bananas(program_state) {
+        const currentTime = program_state.animation_time;
+        if (currentTime >= this.game_state.LAST_SPAWN_BANANA_TIME + this.game_state.BANANA_SPAWN_FREQUENCY) {
+            this.game_state.LAST_SPAWN_BANANA_TIME = currentTime;
+    
+            const numberOfBananas = Math.floor(1 + Math.random() * 2); // random number of bananas generated at this moment between 1-2
+            let lanes = [-1, 0, 1]; // -1 -> left, 0 -> middle, 1 -> right
+            for (let i = 0; i < numberOfBananas; i++) {
+                if (lanes.length === 0) break;
+                let laneIndex = Math.floor(Math.random() * lanes.length); // Choose random lane for banana to spawn in
+                let lane = lanes.splice(laneIndex, 1)[0]; // Get the lane number 
+                const newBanana = {
+                    lane: lane,
+                    positionZ: this.constants.ROAD_MAX_DISTANCE,
+                    spawnTime: currentTime, // Add spawnTime property here
+                };
+                this.game_state.BANANAS.push(newBanana); // Add to array of bananas on road
+            }
+        }
+    }
     update_and_draw_cars(context, program_state) {
         let cars_to_keep = [];
         for (const car of this.game_state.OTHER_CARS) {
@@ -244,6 +327,19 @@ export class Final_Project extends Scene {
             this.check_boost_collision(boostPos);
         }
     }
+    update_and_draw_bananas(context, program_state) {
+        let bananas_to_keep = [];
+        for (const banana of this.game_state.BANANAS) {
+            banana.positionZ = this.constants.ROAD_MAX_DISTANCE - ((program_state.animation_time - banana.spawnTime) / 30 * this.game_state.SPEED);
+            if (banana.positionZ > this.constants.ROAD_MIN_DISTANCE) {
+                let banana_transform = Mat4.translation(banana.lane * 6, 2, banana.positionZ);
+                banana_transform = banana_transform.times(Mat4.scale(1, 1, 1));
+                this.shapes.banana.draw(context, program_state, banana_transform, this.materials.banana_mat);
+                bananas_to_keep.push(banana);
+            }
+        }
+        this.game_state.BANANAS = bananas_to_keep;
+    }
 
     check_boost_collision(boostPos) {
         let boostPosX = boostPos[0];
@@ -268,13 +364,34 @@ export class Final_Project extends Scene {
             carMinY <= boostMaxY && carMaxY >= boostMinY &&
             carMinZ <= boostMaxZ && carMaxZ >= boostMinZ) {
             this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
-            this.game_state.OTHER_CAR_SPEED = this.game_state.BOOST_SPEED_MULTIPLIER;
+            this.game_state.OTHER_CAR_SPEED = this.game_state.SPEED + this.game_state.OTHER_CAR_SPEED
 
             setTimeout(() => {
                 this.game_state.SPEED = 1;
                 this.game_state.OTHER_CAR_SPEED = 0.5;
             }, this.game_state.BOOST_DURATION);
         }
+    }
+    check_banana_collisions(program_state) {
+        const car_position = this.carPos;
+        let bananas_to_keep = [];
+        for (const banana of this.game_state.BANANAS) {
+            let banana_position = Mat4.translation(banana.lane * 6, 2.1, banana.positionZ).times(vec4(0, 0, 0, 1));
+            if (banana_position.minus(car_position).norm() < 5) { // deals with collision detection
+                console.log("Collision detected!");
+                this.game_state.CAR_SPIN = 6 * this.game_state.SPEED;//speed of Car starts spin
+                this.game_state.SPEED = 1/this.game_state.BOOST_SPEED_MULTIPLIER;//speed of Speed
+                this.game_state.SPIN_START_TIME = program_state.animation_time;
+                setTimeout(() => {
+                    this.game_state.SPEED = 1;//reset speed
+                    this.game_state.OTHER_CAR_SPEED = 0.5;// reset other car speed
+                    this.game_state.CAR_SPIN = 0; //stop spin
+                }, this.game_state.SPIN_DURATION);
+            } else {
+                bananas_to_keep.push(banana);
+            }
+        }
+        this.game_state.BANANAS = bananas_to_keep;
     }
 
     check_car_collisions(program_state) {
@@ -325,7 +442,7 @@ export class Final_Project extends Scene {
                 setTimeout(() => {
                     this.game_state.SPEED = 1;
                     this.game_state.OTHER_CAR_SPEED = 0.5;
-                    this.game_state.collisionInProgress  =false;
+                    this.game_state.collisionInProgress  = false;
                 }, 2000);
             }
         }
