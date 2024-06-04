@@ -27,6 +27,8 @@ export class Final_Project extends Scene {
             heart: new Shape_From_File("assets/heart.obj"), // Heart blender model
             banana: new Shape_From_File("assets/bananapeel.obj"), // Banana model
             sugar_boost: new defs.Cube(),
+            hat: new Shape_From_File("assets/hat.obj"), // Hat blender model (ob
+
         };
     }
 
@@ -42,6 +44,7 @@ export class Final_Project extends Scene {
             heart_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#8b0000"), specularity: 0 }),
             banana_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFF00"), specularity: 0 }),
             sugar_boost_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#ffffff"), specularity: 0 }),
+            hat_mat: new Material(new defs.Phong_Shader(), { ambient: 0.3, diffusivity: 1, color: hex_color("#D2691E")}),
         };
     }
 
@@ -233,6 +236,11 @@ export class Final_Project extends Scene {
             .times(Mat4.scale(2, 2.5, 3));
         this.shapes.taxi.draw(context, program_state, car_transform, this.materials.taxi_mat);
         this.carPos = car_transform.times(vec4(0, 0, 0, 1));
+
+        let hat_transform = car_transform
+        .times(Mat4.translation(0, 1.01, 0)) // Adjust this value to position the hat correctly on the car
+        .times(Mat4.scale(0.5, 0.5, 0.5)); // Adjust these values to scale the hat correctly
+    this.shapes.hat.draw(context, program_state, hat_transform, this.materials.hat_mat);
     }
 
     draw_desert(context, program_state) {
