@@ -67,6 +67,7 @@ export class Final_Project extends Scene {
             BOOSTS: [],
             BOOST_DURATION: 1 * 1000,
             BOOST_SPEED_MULTIPLIER: 2,
+            DESPAWN_DELAY:50000,
             OTHER_CARS: [],
             OTHER_CAR_SPAWN_FREQUENCY: 6000,
             LAST_SPAWN_CAR_TIME: 0,
@@ -289,6 +290,8 @@ export class Final_Project extends Scene {
                 const newBanana = {
                     lane: lane,
                     positionZ: this.constants.ROAD_MAX_DISTANCE,
+                    distance: 0,
+                    despawnTime: program_state.animation_time + this.game_state.DESPAWN_DELAY,
                     spawnTime: currentTime, // Add spawnTime property here
                 };
                 this.game_state.BANANAS.push(newBanana); // Add to array of bananas on road
@@ -320,21 +323,25 @@ export class Final_Project extends Scene {
             const newBoost = {
                 lane: Math.floor(Math.random() * 3) - 1,
                 spawnTime: program_state.animation_time,
+                despawnTime: program_state.animation_time + this.game_state.DESPAWN_DELAY, // Add despawnTime property here
                 type: Math.random() < 0.8? 'boost': 'sugar_boost',
+                distance: 0,
             };
             this.game_state.BOOSTS.push(newBoost);
         }
 
         let boosts_to_keep = [];
         for (const boost of this.game_state.BOOSTS) {
-            let boost_transform = Mat4.translation(boost.lane * 5, 2, this.constants.ROAD_MAX_DISTANCE - ((program_state.animation_time - boost.spawnTime) / 30 * this.game_state.SPEED));
+
+            boost.distance += this.game_state.SPEED * (program_state.animation_time - boost.spawnTime)/10000;
+            let boost_transform = Mat4.translation(boost.lane * 5, 2, this.constants.ROAD_MAX_DISTANCE - boost.distance);
             boost_transform = boost_transform.times(Mat4.scale(this.constants.BOOST_SIZE, this.constants.BOOST_SIZE, this.constants.BOOST_SIZE));
             let material = boost.type == 'boost'? this.materials.boost_mat : this.materials.sugar_boost_mat;
             //console.log(material);
             this.shapes.boost.draw(context, program_state, boost_transform, material);
 
             let boostPos = boost_transform.times(vec4(0, 0, 0, 1));
-            if (boostPos[2] > this.constants.ROAD_MIN_DISTANCE) {
+            if (program_state.animation_time < boost.despawnTime) {
                 if (!this.check_boost_collision(boostPos, boost.type)){
                     boosts_to_keep.push(boost);
                 }
@@ -345,12 +352,17 @@ export class Final_Project extends Scene {
     update_and_draw_bananas(context, program_state) {
         let bananas_to_keep = [];
         for (const banana of this.game_state.BANANAS) {
-            banana.positionZ = this.constants.ROAD_MAX_DISTANCE - ((program_state.animation_time - banana.spawnTime) / 30 * this.game_state.SPEED);
-            if (banana.positionZ > this.constants.ROAD_MIN_DISTANCE) {
-                let banana_transform = Mat4.translation(banana.lane * 6, 2, banana.positionZ);
-                banana_transform = banana_transform.times(Mat4.scale(1, 1, 1));
-                this.shapes.banana.draw(context, program_state, banana_transform, this.materials.banana_mat);
-                bananas_to_keep.push(banana);
+            banana.distance += this.game_state.SPEED * (program_state.animation_time - banana.spawnTime)/10000;
+            let banana_transform = Mat4.translation(banana.lane * 6, 2, this.constants.ROAD_MAX_DISTANCE - banana.distance);
+            banana_transform = banana_transform.times(Mat4.scale(1, 1, 1));
+            this.shapes.banana.draw(context, program_state, banana_transform, this.materials.banana_mat);
+
+            if (program_state.animation_time < banana.despawnTime) {
+                if (!this.check_banana_collisions(program_state)){
+                    bananas_to_keep.push(banana);
+                }
+                
+                
             }
         }
         this.game_state.BANANAS = bananas_to_keep;
@@ -359,6 +371,7 @@ export class Final_Project extends Scene {
 
 
     check_boost_collision(boostPos, type) {
+        let collision = false;
         let boostPosX = boostPos[0];
         let boostPosY = boostPos[1];
         let boostPosZ = boostPos[2];
@@ -386,10 +399,11 @@ export class Final_Project extends Scene {
             if (type == 'boost') {
                 this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
                 this.game_state.OTHER_CAR_SPEED = this.game_state.BOOST_SPEED_MULTIPLIER;
-
+                collision = true;
                 setTimeout(() => {
                     this.game_state.SPEED = 1;
                     this.game_state.OTHER_CAR_SPEED = 0.5;
+                    collision = false;
                 }, this.game_state.BOOST_DURATION);
             }
             else if (type == 'sugar_boost') {
@@ -398,6 +412,7 @@ export class Final_Project extends Scene {
 
 
         }
+        return collision;
     }
 
     activate_sugar_boost() {
@@ -421,16 +436,18 @@ export class Final_Project extends Scene {
 
     }
     check_banana_collisions(program_state) {
+        let collision = false;
         const car_position = this.carPos;
         let bananas_to_keep = [];
         for (const banana of this.game_state.BANANAS) {
-            let banana_position = Mat4.translation(banana.lane * 6, 2.1, banana.positionZ).times(vec4(0, 0, 0, 1));
+            let banana_position = Mat4.translation(banana.lane * 6, 2.1, this.constants.ROAD_MAX_DISTANCE - banana.distance).times(vec4(0, 0, 0, 1));
             if (banana_position.minus(car_position).norm() < 5) { // deals with collision detection
                 console.log("Collision detected!");
                 this.game_state.CAR_SPIN = 6 * this.game_state.SPEED;//speed of Car starts spin
                 this.game_state.SPEED = 1/this.game_state.BOOST_SPEED_MULTIPLIER;//speed of Speed
                 this.game_state.SPIN_START_TIME = program_state.animation_time;
                 this.game_state.LIVES_LEFT -= 1;
+                collision = true;
                 setTimeout(() => {
                     this.game_state.SPEED = 1;//reset speed
                     this.game_state.OTHER_CAR_SPEED = 0.5;// reset other car speed
@@ -438,9 +455,11 @@ export class Final_Project extends Scene {
                 }, this.game_state.SPIN_DURATION);
             } else {
                 bananas_to_keep.push(banana);
+                collision = false;
             }
         }
         this.game_state.BANANAS = bananas_to_keep;
+        return collision;
     }
 
 
