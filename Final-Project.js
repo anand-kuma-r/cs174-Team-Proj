@@ -382,6 +382,7 @@ export class Final_Project extends Scene {
                 this.game_state.CAR_SPIN = 6 * this.game_state.SPEED;//speed of Car starts spin
                 this.game_state.SPEED = 1/this.game_state.BOOST_SPEED_MULTIPLIER;//speed of Speed
                 this.game_state.SPIN_START_TIME = program_state.animation_time;
+                this.game_state.LIVES_LEFT -= 1;
                 setTimeout(() => {
                     this.game_state.SPEED = 1;//reset speed
                     this.game_state.OTHER_CAR_SPEED = 0.5;// reset other car speed
