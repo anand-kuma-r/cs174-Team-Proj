@@ -278,7 +278,7 @@ export class Final_Project extends Scene {
     
 
     throw_hat() {
-        let car_transform = Mat4.translation(-6 * this.game_state.target_CAR_LANE, 2.2, -75).times(Mat4.scale(2, 2, 2));
+        let car_transform = Mat4.translation(-6 * this.game_state.target_CAR_LANE, 1.2, -75);
         let car_position = car_transform.times(vec4(0, 1, 0, 1)); // Adjusted Y position for better hat throw animation
         this.game_state.hat_position = car_position; // Assign the car's position to the hat
         this.game_state.hat_position[1] = 5.51; // Adjusted Y position for better hat throw animation
