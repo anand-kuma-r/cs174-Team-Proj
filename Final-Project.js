@@ -63,6 +63,7 @@ export class Final_Project extends Scene {
         this.game_state = {
             SPEED: 1,
             CAR_LANE: 0,
+            target_CAR_LANE: 0,
             CAR_SPIN: 0,
             BOOST_LANE: Math.floor(Math.random() * 3) - 1,
             LAST_SPAWN_BOOST_TIME: 0,
@@ -99,10 +100,10 @@ export class Final_Project extends Scene {
 
     make_control_panel() {
         this.key_triggered_button("Go right", ["ArrowRight"], () => {
-            this.game_state.CAR_LANE = Math.min(this.game_state.CAR_LANE + 1, 1);
+            this.game_state.target_CAR_LANE = Math.min(this.game_state.target_CAR_LANE + 1, 1);
         });
         this.key_triggered_button("Go left", ["ArrowLeft"], () => {
-            this.game_state.CAR_LANE = Math.max(this.game_state.CAR_LANE - 1, -1);
+            this.game_state.target_CAR_LANE = Math.max(this.game_state.target_CAR_LANE - 1, -1);
         });
         this.key_triggered_button("Switch Perspective", ["p"], () => {
             this.perspective_person ^=1;
@@ -110,6 +111,7 @@ export class Final_Project extends Scene {
         this.key_triggered_button("Throw Hat", ["h"], () => {
             if (this.game_state.has_hat) {
             this.throw_hat();
+
             }
         });
     }
@@ -142,7 +144,7 @@ export class Final_Project extends Scene {
         //console.log(this.game_state.LIVES_LEFT);
         this.spawn_bananas(program_state);
         this.update_and_draw_bananas(context, program_state);
-        //this.check_banana_collisions(program_state);
+        this.check_banana_collisions(program_state);
 
         this.spawn_hat(program_state);
         this.update_and_draw_hats(context, program_state);
@@ -155,9 +157,19 @@ export class Final_Project extends Scene {
     }
         
     update_camera(context, program_state) {
+        // Add a lerp function
+        const lerp = (a, b, t) => a + (b - a) * t;
+
+        // Update CAR_LANE towards target_CAR_LANE
+        const maxLaneShiftSpeed = 0.1; // Adjust this value to control the maximum speed of lane shifting
+        let laneShiftSpeed = 0.1 * this.game_state.SPEED;
+        laneShiftSpeed = Math.min(laneShiftSpeed, maxLaneShiftSpeed);
+        this.game_state.CAR_LANE = lerp(this.game_state.CAR_LANE, this.game_state.target_CAR_LANE, laneShiftSpeed);
+
         let car_transform = Mat4.translation(-6 * this.game_state.CAR_LANE, 2.2, -75);
         let car_position = car_transform.times(vec4(0, 0, 0, 1));
-    
+        
+        
         // Define the initial view direction (positive z direction)
         let initial_view_direction = vec3(-1, 0, 0);
     
@@ -266,14 +278,14 @@ export class Final_Project extends Scene {
     
 
     throw_hat() {
-        let car_transform = Mat4.translation(-6 * this.game_state.CAR_LANE, 2.2, -75).times(Mat4.scale(2, 2, 2));
+        let car_transform = Mat4.translation(-6 * this.game_state.target_CAR_LANE, 2.2, -75).times(Mat4.scale(2, 2, 2));
         let car_position = car_transform.times(vec4(0, 1, 0, 1)); // Adjusted Y position for better hat throw animation
         this.game_state.hat_position = car_position; // Assign the car's position to the hat
         this.game_state.hat_position[1] = 5.51; // Adjusted Y position for better hat throw animation
         this.game_state.hat_velocity = vec3(0, 0, 40); // Adjust this value to make the hat move straight forward
         this.game_state.hat_thrown = true;
         this.game_state.has_hat = false; // Ensure the hat is not on the car while being thrown
-        console.log("hat thrown");
+        //console.log("hat thrown");
         setTimeout(() => {
             this.game_state.hat_thrown = false;
             this.game_state.hat_throw_time = 0; // Reset hat throw time after hat is thrown
@@ -481,6 +493,8 @@ export class Final_Project extends Scene {
                 if (!this.check_hat_collision(bananaPos)) {
                     bananas_to_keep.push(banana);
                 }
+
+                
             }
         }
         this.game_state.BANANAS = bananas_to_keep;
@@ -598,33 +612,45 @@ export class Final_Project extends Scene {
     }
     check_banana_collisions(program_state) {
         let collision = false;
-        const car_position = this.carPos;
+      
+        let car_transform = Mat4.translation(-6 * this.game_state.target_CAR_LANE, 2.2, -75);
+        let car_position = car_transform.times(vec4(0, 0, 0, 1));
+    
         let bananas_to_keep = [];
         for (const banana of this.game_state.BANANAS) {
-            let banana_position = Mat4.translation(banana.lane * 6, 2.1, this.constants.ROAD_MAX_DISTANCE - banana.distance).times(vec4(0, 0, 0, 1));
-            if (banana_position.minus(car_position).norm() < 5) { // deals with collision detection
+            let banana_transform = Mat4.translation(banana.lane * 6, 2.1, this.constants.ROAD_MAX_DISTANCE - banana.distance);
+            let bananaPos = banana_transform.times(vec4(0, 0, 0, 1));
+    
+            const bananaMinX = bananaPos[0] - 2;
+            const bananaMaxX = bananaPos[0] + 2;
+            const bananaMinY = bananaPos[1] - 2;
+            const bananaMaxY = bananaPos[1] + 2;
+            const bananaMinZ = bananaPos[2] - 2;
+            const bananaMaxZ = bananaPos[2] + 2;
+    
+            if (car_position[0] <= bananaMaxX && car_position[0] >= bananaMinX &&
+                car_position[1] <= bananaMaxY && car_position[1] >= bananaMinY &&
+                car_position[2] <= bananaMaxZ && car_position[2] >= bananaMinZ) {
                 console.log("Collision detected!");
-                this.game_state.CAR_SPIN = 6 * this.game_state.SPEED;//speed of Car starts spin
-                this.game_state.SPEED = 1/this.game_state.BOOST_SPEED_MULTIPLIER;//speed of Speed
+                this.game_state.CAR_SPIN = 6 * this.game_state.SPEED; //speed of Car starts spin
+                this.game_state.SPEED = 1 / this.game_state.BOOST_SPEED_MULTIPLIER; //speed of Speed
                 this.game_state.SPIN_START_TIME = program_state.animation_time;
                 this.game_state.LIVES_LEFT -= 1;
                 collision = true;
                 setTimeout(() => {
-                    this.game_state.SPEED = 1;//reset speed
-                    this.game_state.OTHER_CAR_SPEED = 0.5;// reset other car speed
+                    this.game_state.SPEED = 1; //reset speed
+                    this.game_state.OTHER_CAR_SPEED = 0.5; // reset other car speed
                     this.game_state.CAR_SPIN = 0; //stop spin
                 }, this.game_state.SPIN_DURATION);
             } else {
                 bananas_to_keep.push(banana);
-                collision = false;
             }
         }
         this.game_state.BANANAS = bananas_to_keep;
         return collision;
     }
 
-
-    check_car_collisions(program_state) {
+        check_car_collisions(program_state) {
         const carMinX = this.carPos[0] - 1.5;
         const carMaxX = this.carPos[0] + 1.5;
         const carMinY = this.carPos[1] - 2.5;
