@@ -102,6 +102,8 @@ export class Shape_From_File extends Shape {                                   /
     }
 }
 
+
+
 export class Shape_From_File_with_MTL extends Shape {
     constructor(filename, mtl_filename = null) {
         super("position", "normal", "texture_coord");
@@ -147,11 +149,11 @@ export class Shape_From_File_with_MTL extends Shape {
     parse_into_mtl(data) {
         const lines = data.split('\n');
         let currentMaterial = null;
-
+    
         lines.forEach(line => {
             line = line.trim();
             if (line.length === 0 || line.startsWith('#')) return;
-
+    
             const [keyword, ...args] = line.split(/\s+/);
             switch (keyword.toLowerCase()) {
                 case 'newmtl':
@@ -167,6 +169,21 @@ export class Shape_From_File_with_MTL extends Shape {
                 case 'ks':
                     this.materials[currentMaterial].specular = args.map(Number);
                     break;
+                case 'ke':
+                    this.materials[currentMaterial].emissive = args.map(Number);
+                    break;
+                case 'ni':
+                    this.materials[currentMaterial].ior = Number(args[0]);  // index of refraction
+                    break;
+                case 'ns':
+                    this.materials[currentMaterial].shininess = Number(args[0]);
+                    break;
+                case 'd':
+                    this.materials[currentMaterial].opacity = Number(args[0]);
+                    break;
+                case 'illum':
+                    this.materials[currentMaterial].illum = Number(args[0]);
+                    break;
                 case 'map_kd':
                     this.materials[currentMaterial].texture = args.join(' ');
                     break;
@@ -174,22 +191,29 @@ export class Shape_From_File_with_MTL extends Shape {
                     break;
             }
         });
-
+    
         for (const matName in this.materials) {
             const mat = this.materials[matName];
             const diffuseColor = (mat.diffuse && mat.diffuse.length === 3) ? [...mat.diffuse, 1] : [1, 1, 1, 1];
             const ambientColor = (mat.ambient && mat.ambient.length === 3) ? [...mat.ambient, 1] : [0, 0, 0, 1];
             const specularColor = (mat.specular && mat.specular.length === 3) ? [...mat.specular, 1] : [0, 0, 0, 1];
-
+            const emissiveColor = (mat.emissive && mat.emissive.length === 3) ? [...mat.emissive, 1] : [0, 0, 0, 1];
+            const shininess = mat.shininess !== undefined ? mat.shininess : 40; // default shininess value
+            const opacity = mat.opacity !== undefined ? mat.opacity : 1; // default opacity value
+            const ior = mat.ior !== undefined ? mat.ior : 1.5; // default index of refraction
+            const illum = mat.illum !== undefined ? mat.illum : 1; // default illumination model
+    
             this.materialOverrides[matName] = new Material(new defs.Textured_Phong(1), {
                 color: color(...diffuseColor),
-                ambient: 0.2,
-                diffusivity: 0.1,
-                specularity: 0.5,
-                texture: mat.texture ? new Texture(mat.texture) : null
+                ambient: .3, //adjust
+                diffusivity: .8, 
+                specularity: .8,
+                texture: mat.texture ? new Texture(mat.texture) : null,
             });
+            console.log("hi,",this.materialOverrides[matName].ambient);
         }
     }
+    
 
     parse_into_mesh(data) {
         let verts = [], vertNormals = [], textures = [];
@@ -302,26 +326,31 @@ export class Shape_From_File_with_MTL extends Shape {
 export class Obj_File_Demo extends Scene {
     constructor() {
         super();
-        this.shapes = {"taxi": new Shape_From_File("assets/taxi.obj", "assets/taxi.mtl")};
+        this.shapes = {"taxi": new Shape_From_File_with_MTL("assets/taxi.obj", "assets/taxi.mtl")};
         this.widget_options = {make_controls: false};
-        this.default_material = new Material(new defs.Textured_Phong(1), {
-            color: color(.5, .5, .5, 1),
-            ambient: .3, diffusivity: .5, specularity: .5
+        this.default_material = new Material(new defs.Phong_Shader(), {
+            color: color(1, 1, 1, 1),
+            ambient: 0.3, diffusivity: .5, specularity: .5
         });
     }
 
     display(context, program_state) {
         const t = program_state.animation_time;
 
-        program_state.set_camera(Mat4.translation(0, 0, -5));
+        program_state.set_camera(Mat4.translation(0, 0, -5));    // Locate the camera here (inverted matrix).
         program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 1, 500);
+        // A spinning light to show off the bump map:
         program_state.lights = [new Light(
             Mat4.rotation(t / 300, 1, 0, 0).times(vec4(3, 2, 10, 1)),
             color(1, .7, .7, 1), 100000)];
 
-        const model_transform = Mat4.identity().times(Mat4.scale(0.5, 0.5, 0.5)); // Adjusted scale
-
-        this.shapes.taxi.draw(context, program_state, model_transform, this.default_material);
+        for (let i of [-1, 1]) {                                       // Spin the 3D model shapes as well.
+            const model_transform = Mat4.rotation(t / 2000, 0, 2, 1)
+                .times(Mat4.translation(2 * i, 0, 0))
+                .times(Mat4.rotation(t / 1500, -1, 2, 0))
+                .times(Mat4.rotation(-Math.PI / 2, 1, 0, 0));
+                this.shapes.taxi.draw(context, program_state, model_transform, this.default_material);
+        }
     }
 
     show_explanation(document_element) {
