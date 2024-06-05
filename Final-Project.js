@@ -1,5 +1,5 @@
 import { defs, tiny } from "./examples/common.js";
-import { Shape_From_File } from "./examples/obj-file-demo.js";
+import { Shape_From_File, Shape_From_File_with_MTL } from "./examples/obj-file-demo.js";
 
 const { Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene } = tiny;
 
@@ -20,9 +20,9 @@ export class Final_Project extends Scene {
             road: new defs.Cube(),
             road_stripe: new defs.Cube(),
             desert: new defs.Cube(),
-            taxi: new Shape_From_File("assets/taxi.obj"), //Taxi blender model (the controllable character)
-            car: new Shape_From_File("assets/car.obj"), //Car blender model (obstacle)
-            truck: new Shape_From_File("assets/truck.obj"), // Truck blender model (obstacle)
+            taxi: new Shape_From_File_with_MTL("assets/taxi.obj", "assets/taxi.mtl"), //Taxi blender model (the controllable character)
+            car: new Shape_From_File_with_MTL("assets/car.obj", "assets/taxi.mtl"), //Car blender model (obstacle)
+            truck: new Shape_From_File_with_MTL("assets/truck.obj", "assets/taxi.mtl"), // Truck blender model (obstacle)
             boost: new defs.Cube(),
             heart: new Shape_From_File("assets/heart.obj"), // Heart blender model
             banana: new Shape_From_File("assets/bananapeel.obj"), // Banana model
@@ -274,9 +274,9 @@ export class Final_Project extends Scene {
     }
 
     draw_car(context, program_state) {
-        let car_transform = Mat4.translation(-6 * this.game_state.CAR_LANE, 2.2, -75)
+        let car_transform = Mat4.translation(-6 * this.game_state.CAR_LANE, 1.2, -75)
             .times(Mat4.rotation((this.game_state.CAR_SPIN * (program_state.animation_time - this.game_state.SPIN_START_TIME)) / 1000, 0, 1, 0)) // Apply rotation
-            .times(Mat4.scale(2, 2.5, 3));
+            .times(Mat4.scale(0.9, 1, 1));
 
         this.shapes.taxi.draw(context, program_state, car_transform, this.materials.taxi_mat);
         this.carPos = car_transform.times(vec4(0, 0, 0, 1));
@@ -290,7 +290,7 @@ export class Final_Project extends Scene {
     }
 
     throw_hat() {
-        let car_transform = Mat4.translation(-6 * this.game_state.target_CAR_LANE, 2.2, -75).times(Mat4.scale(2, 2, 2));
+        let car_transform = Mat4.translation(-6 * this.game_state.target_CAR_LANE, 1.2, -75);
         let car_position = car_transform.times(vec4(0, 1, 0, 1)); // Adjusted Y position for better hat throw animation
         this.game_state.hat_position = car_position; // Assign the car's position to the hat
         this.game_state.hat_position[1] = 5.51; // Adjusted Y position for better hat throw animation
@@ -346,8 +346,8 @@ export class Final_Project extends Scene {
 
     draw_hearts(context, program_state) {
         const heart_scale = 2;
-        const heart_offset_x = 6;
-        const heart_offset_y = 0.5;
+        const heart_offset_x = 8;
+        const heart_offset_y = 6;
         const initial_heart_position = vec3(-30, 30, -25);
 
         for (let i = 0; i < this.game_state.LIVES_LEFT; i++) {
@@ -451,10 +451,10 @@ export class Final_Project extends Scene {
             if (car.positionZ > this.constants.ROAD_MIN_DISTANCE) {
                 let car_transform = Mat4.translation(car.lane * 6, 1.5, car.positionZ);
                 if (car.type == "car") {
-                    car_transform = car_transform.times(Mat4.scale(2, 2, 4));
+                    car_transform = car_transform.times(Mat4.scale(0.8, 0.7, 1));
                     this.shapes.car.draw(context, program_state, car_transform, this.materials.car_mat);
                 } else if (car.type == "truck") {
-                    car_transform = car_transform.times(Mat4.scale(2, 3, 6));
+                    car_transform = car_transform.times(Mat4.scale(0.8, 1, 1.5));
                     this.shapes.truck.draw(context, program_state, car_transform, this.materials.truck_mat);
                 }
                 let carPos = car_transform.times(vec4(0, 0, 0, 1));
