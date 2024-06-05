@@ -21,7 +21,7 @@ export class Final_Project extends Scene {
             road_stripe: new defs.Cube(),
             desert: new defs.Cube(),
             taxi: new Shape_From_File_with_MTL("assets/taxi.obj", "assets/taxi.mtl"), //Taxi blender model (the controllable character)
-            car: new Shape_From_File_with_MTL("assets/car.obj", "assets/taxi.mtl"), //Car blender model (obstacle)
+            car: new Shape_From_File_with_MTL("assets/car.obj", "assets/car.mtl"), //Car blender model (obstacle)
             truck: new Shape_From_File_with_MTL("assets/truck.obj", "assets/taxi.mtl"), // Truck blender model (obstacle)
             boost: new defs.Cube(),
             heart: new Shape_From_File("assets/heart.obj"), // Heart blender model
