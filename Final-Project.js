@@ -522,8 +522,8 @@ export class Final_Project extends Scene {
         let cars_to_keep = [];
         const carLength = 4.5; // Length of the taxi
         const truckLength = 8; // Length of the truck
-        const safeDistance = carLength * 1.5; // Safe distance to maintain between cars
-        const truckSafeDistance = truckLength * 1.5; // Safe distance to maintain between trucks and other vehicles
+        const safeDistance = carLength * 2; // Safe distance to maintain between cars
+        const truckSafeDistance = truckLength * 2; // Safe distance to maintain between trucks and other vehicles
     
         for (let i = 0; i < this.game_state.OTHER_CARS.length; i++) {
             const car = this.game_state.OTHER_CARS[i];
