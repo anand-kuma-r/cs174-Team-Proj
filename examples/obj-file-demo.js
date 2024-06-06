@@ -229,7 +229,7 @@ export class Shape_From_File_with_MTL extends Shape {
         }
 
         this.ready = true;
-        console.log('Parsed shapes:', this.shapes);
+        //console.log('Parsed shapes:', this.shapes);
     }
 
     draw(context, program_state, model_transform, default_material) {
@@ -243,7 +243,7 @@ export class Shape_From_File_with_MTL extends Shape {
                 material = this.materialOverrides[material_name];
             }
 
-            console.log("hey", material.texture);
+            //console.log("hey", material.texture);
 
             shape.copy_onto_graphics_card(context.context);
             shape.draw(context, program_state, model_transform, material);
