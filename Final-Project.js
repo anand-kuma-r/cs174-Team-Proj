@@ -283,8 +283,8 @@ export class Final_Project extends Scene {
 
         if (this.game_state.has_hat) {
             let hat_transform = car_transform
-                .times(Mat4.translation(0, 1.01, 0)) // Adjust translation to properly place the hat on the car
-                .times(Mat4.scale(0.5, 0.5, 0.5));
+                .times(Mat4.translation(0.1, 3.51, 0))
+                .times(Mat4.scale(1, 1, 1));
             this.shapes.hat.draw(context, program_state, hat_transform, this.materials.hat_mat);
         }
     }
