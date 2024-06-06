@@ -21,6 +21,10 @@ export class Final_Project extends Scene {
         this.shapes = {
             road: new defs.Cube(),
             road_stripe: new defs.Cube(),
+            //Reactions
+            angry: new Shape_From_File_with_MTL("assets/madchat.obj", "assets/madchat.mtl"),
+            happy: new Shape_From_File_with_MTL("assets/happychat.obj", "assets/happychat.mtl"),
+
             //desert: new defs.Grid_Patch(20, 20, row_operation, column_operation),
             desert: new defs.Cube(),
             //desert: new Shape_From_File_with_MTL("assets/desert.obj", "assets/desert.mtl"),
@@ -100,6 +104,10 @@ export class Final_Project extends Scene {
             hat_throw_time: 0,
             HATS: [],
             LAST_SPAWN_HAT_TIME: 0,
+            want_emotions: false,
+            visible_reaction: false,
+            visible_reaction_happy: false,
+            has_boost: false,
         };
     }
 
@@ -117,6 +125,9 @@ export class Final_Project extends Scene {
             if (this.game_state.has_hat) {
                 this.throw_hat();
             }
+        });
+        this.key_triggered_button("Turn on Reaction", ["o"], () => {
+            this.game_state.want_emotions ^=1;
         });
     }
 
@@ -160,6 +171,13 @@ export class Final_Project extends Scene {
         }
         //Draw Lives in top Right
         this.draw_hearts(context, program_state);
+
+        //Draw emotion
+        if (this.game_state.want_emotions)
+        {
+            this.draw_angry_reaction(context, program_state);
+            this.draw_happy_reaction(context, program_state);
+        }
     }
 
     update_camera(context, program_state) {
@@ -291,6 +309,47 @@ export class Final_Project extends Scene {
                 .times(Mat4.scale(1, 1, 1));
             this.shapes.hat.draw(context, program_state, hat_transform, this.materials.hat_mat);
         }
+    }
+
+
+    draw_angry_reaction(context, program_state)
+    {
+        if (!this.game_state.want_emotions) return;
+
+        if (this.game_state.collisionInProgress){
+            this.game_state.visible_reaction = true;
+
+            setTimeout(() => {
+                this.game_state.visible_reaction = false;
+            }, 3000);
+        }
+
+        let reaction_transform = Mat4.translation(this.carPos[0] - .5, this.carPos[1] + 4, this.carPos[2]);
+        if (this.game_state.visible_reaction)
+        {
+            this.shapes.angry.draw(context, program_state, reaction_transform, this.materials.taxi_mat);
+        }
+
+    }
+
+    draw_happy_reaction(context, program_state)
+    {
+        if (!this.game_state.want_emotions) return;
+
+        if (this.game_state.invincible || this.game_state.has_boost){
+            this.game_state.visible_reaction_happy = true;
+
+            setTimeout(() => {
+                this.game_state.visible_reaction_happy = false;
+            }, 3000);
+        }
+
+        let reaction_transform = Mat4.translation(this.carPos[0] - .5, this.carPos[1] + 4, this.carPos[2]);
+        if (this.game_state.visible_reaction_happy && !this.game_state.visible_reaction)
+        {
+            this.shapes.happy.draw(context, program_state, reaction_transform, this.materials.taxi_mat);
+        }
+
     }
 
     throw_hat() {
