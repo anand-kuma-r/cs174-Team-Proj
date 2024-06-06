@@ -22,6 +22,7 @@ export class Final_Project extends Scene {
             desert: new defs.Cube(),
             //Reactions
             angry: new Shape_From_File_with_MTL("assets/madchat.obj", "assets/madchat.mtl"),
+            happy: new Shape_From_File_with_MTL("assets/happychat.obj", "assets/happychat.mtl"),
             //Vehicles
             taxi: new Shape_From_File_with_MTL("assets/taxi.obj", "assets/taxi.mtl"), //Taxi blender model (the controllable character)
             car: new Shape_From_File_with_MTL("assets/car.obj", "assets/car.mtl"), //Car blender model (obstacle)
@@ -102,6 +103,8 @@ export class Final_Project extends Scene {
             LAST_SPAWN_HAT_TIME: 0,
             want_emotions: false,
             visible_reaction: false,
+            visible_reaction_happy: false,
+            has_boost: false,
         };
     }
 
@@ -170,6 +173,7 @@ export class Final_Project extends Scene {
         if (this.game_state.want_emotions)
         {
             this.draw_angry_reaction(context, program_state);
+            this.draw_happy_reaction(context, program_state);
         }
     }
 
@@ -318,10 +322,30 @@ export class Final_Project extends Scene {
             }, 3000);
         }
 
-        let reaction_transform = Mat4.translation(this.carPos[0] + 1, this.carPos[1] + 3, this.carPos[2]);
+        let reaction_transform = Mat4.translation(this.carPos[0] - .5, this.carPos[1] + 4, this.carPos[2]);
         if (this.game_state.visible_reaction)
         {
             this.shapes.angry.draw(context, program_state, reaction_transform, this.materials.taxi_mat);
+        }
+        
+    }
+
+    draw_happy_reaction(context, program_state)
+    {
+        if (!this.game_state.want_emotions) return;
+
+        if (this.game_state.invincible || this.game_state.has_boost){
+            this.game_state.visible_reaction_happy = true;
+
+            setTimeout(() => {
+                this.game_state.visible_reaction_happy = false;
+            }, 3000);
+        }
+
+        let reaction_transform = Mat4.translation(this.carPos[0] - .5, this.carPos[1] + 4, this.carPos[2]);
+        if (this.game_state.visible_reaction_happy && !this.game_state.visible_reaction)
+        {
+            this.shapes.happy.draw(context, program_state, reaction_transform, this.materials.taxi_mat);
         }
         
     }
@@ -590,10 +614,12 @@ export class Final_Project extends Scene {
                 this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
                 this.game_state.OTHER_CAR_SPEED = this.game_state.BOOST_SPEED_MULTIPLIER;
                 collision = true;
+                this.game_state.has_boost = true;
                 setTimeout(() => {
                     this.game_state.SPEED = 1;
                     this.game_state.OTHER_CAR_SPEED = 0.5;
                     collision = false;
+                    this.game_state.has_boost = false;
                 }, this.game_state.BOOST_DURATION);
             } else if (type == "sugar_boost") {
                 this.activate_sugar_boost();
