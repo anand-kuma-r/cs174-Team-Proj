@@ -20,9 +20,13 @@ export class Final_Project extends Scene {
             road: new defs.Cube(),
             road_stripe: new defs.Cube(),
             desert: new defs.Cube(),
+            //Reactions
+            angry: new Shape_From_File_with_MTL("assets/madchat.obj", "assets/madchat.mtl"),
+            //Vehicles
             taxi: new Shape_From_File_with_MTL("assets/taxi.obj", "assets/taxi.mtl"), //Taxi blender model (the controllable character)
             car: new Shape_From_File_with_MTL("assets/car.obj", "assets/car.mtl"), //Car blender model (obstacle)
             truck: new Shape_From_File_with_MTL("assets/truck.obj", "assets/truck.mtl"), // Truck blender model (obstacle)
+            //Power up and Obstacles
             boost: new defs.Cube(),
             heart: new Shape_From_File("assets/heart.obj"), // Heart blender model
             banana: new Shape_From_File("assets/bananapeel.obj"), // Banana model
@@ -96,6 +100,8 @@ export class Final_Project extends Scene {
             hat_throw_time: 0,
             HATS: [],
             LAST_SPAWN_HAT_TIME: 0,
+            want_emotions: false,
+            visible_reaction: false,
         };
     }
 
@@ -113,6 +119,9 @@ export class Final_Project extends Scene {
             if (this.game_state.has_hat) {
                 this.throw_hat();
             }
+        });
+        this.key_triggered_button("Turn on Reaction", ["o"], () => {
+            this.game_state.want_emotions ^=1;
         });
     }
 
@@ -156,7 +165,15 @@ export class Final_Project extends Scene {
         }
         //Draw Lives in top Right
         this.draw_hearts(context, program_state);
+
+        //Draw emotion
+        if (this.game_state.want_emotions)
+        {
+            this.draw_angry_reaction(context, program_state);
+        }
     }
+
+    
 
     update_camera(context, program_state) {
         // Add a lerp function
@@ -287,6 +304,26 @@ export class Final_Project extends Scene {
                 .times(Mat4.scale(1, 1, 1));
             this.shapes.hat.draw(context, program_state, hat_transform, this.materials.hat_mat);
         }
+    }
+
+    draw_angry_reaction(context, program_state)
+    {
+        if (!this.game_state.want_emotions) return;
+
+        if (this.game_state.collisionInProgress){
+            this.game_state.visible_reaction = true;
+
+            setTimeout(() => {
+                this.game_state.visible_reaction = false;
+            }, 3000);
+        }
+
+        let reaction_transform = Mat4.translation(this.carPos[0] + 1, this.carPos[1] + 3, this.carPos[2]);
+        if (this.game_state.visible_reaction)
+        {
+            this.shapes.angry.draw(context, program_state, reaction_transform, this.materials.taxi_mat);
+        }
+        
     }
 
     throw_hat() {
