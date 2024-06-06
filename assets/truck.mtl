@@ -1,7 +1,7 @@
 # Blender 4.1.1 MTL File: 'truck.blend'
 # www.blender.org
 
-newmtl Material.001
+newmtl MaterialT.001
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.027719 0.027719 0.027719
@@ -11,7 +11,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 
-newmtl Material.002
+newmtl MaterialT.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.060453 0.060453 0.060453
@@ -21,7 +21,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 
-newmtl Material.003
+newmtl MaterialT.003
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.062999 0.062999 0.062999
@@ -31,7 +31,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 
-newmtl Material.004
+newmtl MaterialT.004
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.034069 0.019352 0.430380
@@ -41,7 +41,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 
-newmtl Material.005
+newmtl MaterialT.005
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.794169 0.794169 0.794169
@@ -51,7 +51,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 
-newmtl Material.006
+newmtl MaterialT.006
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.076138 0.686993 0.800007
@@ -61,7 +61,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 
-newmtl Material.007
+newmtl MaterialT.007
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.015535 0.001816 0.055543
@@ -71,7 +71,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 
-newmtl Material.008
+newmtl MaterialT.008
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.012063 0.003332 0.068275
@@ -81,7 +81,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 
-newmtl Material.010
+newmtl MaterialT.010
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800016 0.422104 0.202285
@@ -91,7 +91,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 
-newmtl Material.011
+newmtl MaterialT.011
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800007 0.707270 0.158412
@@ -101,7 +101,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 
-newmtl Material.012
+newmtl MaterialT.012
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.219328 0.219328 0.219328
@@ -111,7 +111,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 
-newmtl Material.013
+newmtl MaterialT.013
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.219328 0.219328 0.219328
