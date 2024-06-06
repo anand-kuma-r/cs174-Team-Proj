@@ -16,18 +16,17 @@ export class Final_Project extends Scene {
     }
 
     initialize_shapes() {
+        const row_operation = (s, p) => vec3(-10 + 20 * s, Math.random() * 0.5, -10 + 20 * p);
+        const column_operation =(t, p, s) => vec3(-10 + 20 * s, Math.random() * 0.5, -10 + 20 * t);
         this.shapes = {
             road: new defs.Cube(),
             road_stripe: new defs.Cube(),
+            //desert: new defs.Grid_Patch(20, 20, row_operation, column_operation),
             desert: new defs.Cube(),
-            //Reactions
-            angry: new Shape_From_File_with_MTL("assets/madchat.obj", "assets/madchat.mtl"),
-            happy: new Shape_From_File_with_MTL("assets/happychat.obj", "assets/happychat.mtl"),
-            //Vehicles
+            //desert: new Shape_From_File_with_MTL("assets/desert.obj", "assets/desert.mtl"),
             taxi: new Shape_From_File_with_MTL("assets/taxi.obj", "assets/taxi.mtl"), //Taxi blender model (the controllable character)
             car: new Shape_From_File_with_MTL("assets/car.obj", "assets/car.mtl"), //Car blender model (obstacle)
             truck: new Shape_From_File_with_MTL("assets/truck.obj", "assets/truck.mtl"), // Truck blender model (obstacle)
-            //Power up and Obstacles
             boost: new defs.Cube(),
             heart: new Shape_From_File("assets/heart.obj"), // Heart blender model
             banana: new Shape_From_File("assets/bananapeel.obj"), // Banana model
@@ -101,10 +100,6 @@ export class Final_Project extends Scene {
             hat_throw_time: 0,
             HATS: [],
             LAST_SPAWN_HAT_TIME: 0,
-            want_emotions: false,
-            visible_reaction: false,
-            visible_reaction_happy: false,
-            has_boost: false,
         };
     }
 
@@ -122,9 +117,6 @@ export class Final_Project extends Scene {
             if (this.game_state.has_hat) {
                 this.throw_hat();
             }
-        });
-        this.key_triggered_button("Turn on Reaction", ["o"], () => {
-            this.game_state.want_emotions ^=1;
         });
     }
 
@@ -168,16 +160,7 @@ export class Final_Project extends Scene {
         }
         //Draw Lives in top Right
         this.draw_hearts(context, program_state);
-
-        //Draw emotion
-        if (this.game_state.want_emotions)
-        {
-            this.draw_angry_reaction(context, program_state);
-            this.draw_happy_reaction(context, program_state);
-        }
     }
-
-    
 
     update_camera(context, program_state) {
         // Add a lerp function
@@ -310,46 +293,6 @@ export class Final_Project extends Scene {
         }
     }
 
-    draw_angry_reaction(context, program_state)
-    {
-        if (!this.game_state.want_emotions) return;
-
-        if (this.game_state.collisionInProgress){
-            this.game_state.visible_reaction = true;
-
-            setTimeout(() => {
-                this.game_state.visible_reaction = false;
-            }, 3000);
-        }
-
-        let reaction_transform = Mat4.translation(this.carPos[0] - .5, this.carPos[1] + 4, this.carPos[2]);
-        if (this.game_state.visible_reaction)
-        {
-            this.shapes.angry.draw(context, program_state, reaction_transform, this.materials.taxi_mat);
-        }
-        
-    }
-
-    draw_happy_reaction(context, program_state)
-    {
-        if (!this.game_state.want_emotions) return;
-
-        if (this.game_state.invincible || this.game_state.has_boost){
-            this.game_state.visible_reaction_happy = true;
-
-            setTimeout(() => {
-                this.game_state.visible_reaction_happy = false;
-            }, 3000);
-        }
-
-        let reaction_transform = Mat4.translation(this.carPos[0] - .5, this.carPos[1] + 4, this.carPos[2]);
-        if (this.game_state.visible_reaction_happy && !this.game_state.visible_reaction)
-        {
-            this.shapes.happy.draw(context, program_state, reaction_transform, this.materials.taxi_mat);
-        }
-        
-    }
-
     throw_hat() {
         let car_transform = Mat4.translation(-6 * this.game_state.target_CAR_LANE, 1.2, -75);
         let car_position = car_transform.times(vec4(0, 1, 0, 1)); // Adjusted Y position for better hat throw animation
@@ -430,23 +373,32 @@ export class Final_Project extends Scene {
         if (currentTime >= this.game_state.LAST_SPAWN_CAR_TIME + this.game_state.NEXT_SPAWN_TIME) {
             this.game_state.LAST_SPAWN_CAR_TIME = currentTime;
             this.game_state.NEXT_SPAWN_TIME = 1000 + Math.random() * 4000;
-
+    
             const numberOfCars = Math.floor(1 + Math.random() * 2); // random number of cars generated at this moment between 1-2
             let lanes = [-1, 0, 1]; // -1 -> left, 0 -> middle, 1 -> right
+
+
             for (let i = 0; i < numberOfCars; i++) {
                 if (lanes.length == 0) break;
                 let laneIndex = Math.floor(Math.random() * lanes.length); // Choose random lane for car to spawn in
                 let lane = lanes.splice(laneIndex, 1)[0]; // Get the lane number
                 let vehicleType = Math.random() < 0.25 ? "truck" : "car"; // Choose obstacle to spawn in (truck or car)
+                let car_length = (vehicleType == "truck"? 8:4.5); //taxi length
+
+                
+
                 const newCar = {
                     type: vehicleType,
                     lane: lane,
                     positionZ: this.constants.ROAD_MAX_DISTANCE,
+                    speed: 0.25 + Math.random() * 0.5 // Random speed between 0.25 and 0.75
                 };
                 this.game_state.OTHER_CARS.push(newCar); // Add to array of cars on road
             }
         }
     }
+
+
     spawn_bananas(program_state) {
         const currentTime = program_state.animation_time;
         if (currentTime >= this.game_state.LAST_SPAWN_BANANA_TIME + this.game_state.BANANA_SPAWN_FREQUENCY) {
@@ -505,10 +457,41 @@ export class Final_Project extends Scene {
         }
         this.game_state.HATS = hats_to_keep;
     }
+    
+    
     update_and_draw_cars(context, program_state) {
         let cars_to_keep = [];
-        for (const car of this.game_state.OTHER_CARS) {
-            car.positionZ -= this.game_state.OTHER_CAR_SPEED;
+        const carLength = 4.5; // Length of the taxi
+        const truckLength = 8; // Length of the truck
+        const safeDistance = carLength * 1.5; // Safe distance to maintain between cars
+        const truckSafeDistance = truckLength * 1.5; // Safe distance to maintain between trucks and other vehicles
+    
+        for (let i = 0; i < this.game_state.OTHER_CARS.length; i++) {
+            const car = this.game_state.OTHER_CARS[i];
+            let collision = false;
+    
+            // Check for the car in front in the same lane
+            let carInFront = null;
+            for (let j = 0; j < this.game_state.OTHER_CARS.length; j++) {
+                if (i === j) continue;
+                const otherCar = this.game_state.OTHER_CARS[j];
+                if (car.lane === otherCar.lane && otherCar.positionZ < car.positionZ) {
+                    if (!carInFront || otherCar.positionZ > carInFront.positionZ) {
+                        carInFront = otherCar;
+                    }
+                }
+            }
+    
+            // Adjust speed if there's a car in front and it's too close
+            if (carInFront) {
+                let distance = car.type === "truck" || carInFront.type === "truck" ? truckSafeDistance : safeDistance;
+                if (car.positionZ - carInFront.positionZ < distance) {
+                    car.speed = Math.min(car.speed, carInFront.speed * 0.9); // Slow down to 90% of the car in front's speed
+                }
+            }
+    
+            car.positionZ -= car.speed;
+    
             if (car.positionZ > this.constants.ROAD_MIN_DISTANCE) {
                 let car_transform = Mat4.translation(car.lane * 6, 1.5, car.positionZ);
                 if (car.type == "car") {
@@ -526,6 +509,7 @@ export class Final_Project extends Scene {
         }
         this.game_state.OTHER_CARS = cars_to_keep;
     }
+    
 
     update_and_draw_boosts(context, program_state) {
         let lanes = [-1, 0, 1];
@@ -614,12 +598,10 @@ export class Final_Project extends Scene {
                 this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
                 this.game_state.OTHER_CAR_SPEED = this.game_state.BOOST_SPEED_MULTIPLIER;
                 collision = true;
-                this.game_state.has_boost = true;
                 setTimeout(() => {
                     this.game_state.SPEED = 1;
                     this.game_state.OTHER_CAR_SPEED = 0.5;
                     collision = false;
-                    this.game_state.has_boost = false;
                 }, this.game_state.BOOST_DURATION);
             } else if (type == "sugar_boost") {
                 this.activate_sugar_boost();
@@ -774,8 +756,8 @@ export class Final_Project extends Scene {
                 otherCarMaxX = otherCarPosX + 1.0;
                 otherCarMinY = otherCarPosY - 3;
                 otherCarMaxY = otherCarPosY + 3;
-                otherCarMinZ = otherCarPosZ - 3.0;
-                otherCarMaxZ = otherCarPosZ + 3.0;
+                otherCarMinZ = otherCarPosZ - 4.0;
+                otherCarMaxZ = otherCarPosZ + 4.0;
             }
 
             //Slow down temporarily when hit another car and subtract life by 1
