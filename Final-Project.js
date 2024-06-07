@@ -570,12 +570,17 @@ export class Final_Project extends Scene {
                 let vehicleType = Math.random() < 0.25 ? "truck" : "car"; // Choose obstacle to spawn in (truck or car)
                 let car_length = vehicleType == "truck" ? 8 : 4.5; //taxi length
 
+                const initialSpeed = 0.25 + Math.random() * 0.5; // Random speed between 0.25 and 0.75
                 const newCar = {
                     type: vehicleType,
                     lane: lane,
                     positionZ: this.constants.ROAD_MAX_DISTANCE,
-                    speed: 0.25 + Math.random() * 0.5, // Random speed between 0.25 and 0.75
+                    initialSpeed: initialSpeed,
+                    speed: initialSpeed,
+                    temporarySpeed: 0,
+                    temporarySpeedExpiration: 0,
                 };
+
                 this.game_state.OTHER_CARS.push(newCar); // Add to array of cars on road
             }
         }
@@ -662,6 +667,13 @@ export class Final_Project extends Scene {
                         carInFront = otherCar;
                     }
                 }
+            }
+
+            // check if the cars temporary speed should be used (i.e. a collision just happened)
+            if (car.temporarySpeedExpiration > program_state.animation_time) {
+                car.speed = car.temporarySpeed;
+            } else {
+                car.speed = car.initialSpeed;
             }
 
             // Adjust speed if there's a car in front and it's too close
@@ -973,6 +985,8 @@ export class Final_Project extends Scene {
                     this.game_state.LIVES_LEFT -= 1;
                     this.game_state.SPEED *= 0.2;
                     this.game_state.OTHER_CAR_SPEED *= 0.2;
+                    otherCar.temporarySpeed = -0.1;
+                    otherCar.temporarySpeedExpiration = program_state.animation_time + 2000;
                 }
                 setTimeout(() => {
                     this.game_state.SPEED = 1;
