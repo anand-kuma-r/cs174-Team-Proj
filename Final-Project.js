@@ -655,10 +655,18 @@ export class Final_Project extends Scene {
             console.log(type);
             if (type == "boost") {
                 this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
+                for (let car of this.game_state.OTHER_CARS)
+                {
+                        car.speed *= this.game_state.BOOST_SPEED_MULTIPLIER;
+                }
                 this.game_state.OTHER_CAR_SPEED = this.game_state.BOOST_SPEED_MULTIPLIER;
                 collision = true;
                 setTimeout(() => {
                     this.game_state.SPEED = 1;
+                    for (let car of this.game_state.OTHER_CARS)
+                    {
+                                car.speed /= this.game_state.BOOST_SPEED_MULTIPLIER;
+                    }
                     this.game_state.OTHER_CAR_SPEED = 0.5;
                     collision = false;
                 }, this.game_state.BOOST_DURATION);
