@@ -1,7 +1,6 @@
 import { defs, tiny } from "./examples/common.js";
 import { Shape_From_File, Shape_From_File_with_MTL } from "./examples/obj-file-demo.js";
 
-<<<<<<< HEAD
 const { Vector, Vector3, vec, vec3, vec4, color, hex_color, Texture ,Shader, Matrix, Mat4, Light, Shape, Material, Scene } = tiny;
 
 const Text_Line = defs.Text_Line =
@@ -50,10 +49,7 @@ class Text_Line extends Shape
         this.copy_onto_graphics_card( caller.context, ["texture_coord"], false );
     }
 }
-=======
-const { Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture } = tiny;
 const {Textured_Phong} = defs
->>>>>>> 1d6c8531827d6e7c93a70bb389caf2b95e46d76d
 
 export class Final_Project extends Scene {
     constructor() {
