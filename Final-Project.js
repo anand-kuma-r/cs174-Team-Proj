@@ -1,7 +1,54 @@
 import { defs, tiny } from "./examples/common.js";
 import { Shape_From_File, Shape_From_File_with_MTL } from "./examples/obj-file-demo.js";
 
-const { Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene } = tiny;
+const { Vector, Vector3, vec, vec3, vec4, color, hex_color, Texture ,Shader, Matrix, Mat4, Light, Shape, Material, Scene } = tiny;
+
+const Text_Line = defs.Text_Line =
+class Text_Line extends Shape
+{                           // **Text_Line** embeds text in the 3D world, using a crude texture
+                            // method.  This Shape is made of a horizontal arrangement of quads.
+                            // Each is textured over with images of ASCII characters, spelling
+                            // out a string.  Usage:  Instantiate the Shape with the desired
+                            // character line width.  Then assign it a single-line string by calling
+                            // set_string("your string") on it. Draw the shape on a material
+                            // with full ambient weight, and text.png assigned as its texture
+                            // file.  For multi-line strings, repeat this process and draw with
+                            // a different matrix.
+  constructor( max_size )
+    { super( "position", "normal", "texture_coord" );
+      this.max_size = max_size;
+      var object_transform = Mat4.identity();
+      for( var i = 0; i < max_size; i++ )
+      {                                       // Each quad is a separate Square instance:
+        defs.Square.insert_transformed_copy_into( this, [], object_transform );
+        object_transform.post_multiply( Mat4.translation( 1.5,0,0 ) );
+      }
+    }
+  set_string( line, caller )
+    {           // set_string():  Call this to overwrite the texture coordinates buffer with new
+                // values per quad, which enclose each of the string's characters.
+      this.arrays.texture_coord = [];
+      for( var i = 0; i < this.max_size; i++ )
+        {
+          var row = Math.floor( ( i < line.length ? line.charCodeAt( i ) : ' '.charCodeAt() ) / 16 ),
+              col = Math.floor( ( i < line.length ? line.charCodeAt( i ) : ' '.charCodeAt() ) % 16 );
+
+          var skip = 3, size = 32, sizefloor = size - skip;
+          var dim = size * 16,
+              left  = (col * size + skip) / dim,      top    = (row * size + skip) / dim,
+              right = (col * size + sizefloor) / dim, bottom = (row * size + sizefloor + 5) / dim;
+
+          this.arrays.texture_coord.push( ...Vector.cast( [ left,  1-bottom], [ right, 1-bottom ],
+                                                          [ left,  1-top   ], [ right, 1-top    ] ) );
+        }
+      if( !this.existing )
+        { this.copy_onto_graphics_card( caller.context );
+          this.existing = true;
+        }
+      else
+        this.copy_onto_graphics_card( caller.context, ["texture_coord"], false );
+    }
+}
 
 export class Final_Project extends Scene {
     constructor() {
@@ -40,6 +87,7 @@ export class Final_Project extends Scene {
             start_button: new Shape_From_File_with_MTL("assets/start.obj", "assets/start.mtl"),
             end_button: new Shape_From_File_with_MTL("assets/end.obj", "assets/end.mtl"),
             restart_button: new Shape_From_File_with_MTL("assets/restart.obj", "assets/restart.mtl"),
+            score_text: new Text_Line(12),
         };
     }
 
@@ -58,6 +106,10 @@ export class Final_Project extends Scene {
             sun: new Material(new defs.Phong_Shader(), { ambient: 1, diffusivity: 0, specularity: 0, color: hex_color("#ff0000") }), // used from project 3 sun
             hat_mat: new Material(new defs.Phong_Shader(), { ambient: 0.3, diffusivity: 1, color: hex_color("#D2691E") }),
             start_button_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFF00"), specularity: 0 }),
+            text_image: new Material(new defs.Textured_Phong(1), {
+                    texture: new Texture("assets/text.png"),
+                    ambient: 1, diffusivity: 0, specularity: 0
+                }),
             end_button_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFF00"), specularity: 0 }),
             restart_button_mat: new Material(new defs.Phong_Shader(), {
                 ambient: 0.8,
@@ -65,6 +117,7 @@ export class Final_Project extends Scene {
                 color: hex_color("#FFFF00"),
                 specularity: 0,
             }),
+            
         };
     }
 
@@ -122,6 +175,7 @@ export class Final_Project extends Scene {
             game_start: false,
             game_end: false,
             mouse_listener_added: false,
+            SCORE: 0,
         };
     }
 
@@ -160,12 +214,17 @@ export class Final_Project extends Scene {
 
         if (!this.game_state.game_start) {
             this.game_state.LIVES_LEFT = 3;
+            this.game_state.SCORE = 0;
             this.draw_start_button(context, program_state);
+            
         } else if (this.game_state.game_end) {
             this.draw_end_button(context, program_state);
         } else {
             //Draw Lives in top Right
             this.draw_hearts(context, program_state);
+            this.game_state.SCORE += (this.game_state.SPEED * program_state.animation_delta_time)/1000;
+            this.draw_score(context, program_state);
+            
         }
 
         // Draw the sun
@@ -369,6 +428,7 @@ export class Final_Project extends Scene {
                 this.game_state.BANANAS = [];
                 this.game_state.BOOSTS = [];
                 this.game_state.HATS = [];
+                this.game_state.SCORE = 0;
                 //console.log("Start button clicked");
             }
         }
@@ -387,6 +447,21 @@ export class Final_Project extends Scene {
 
         const restart_transform = Mat4.identity().times(Mat4.scale(0.25, 0.25, 1)).times(Mat4.translation(0, 30, -75));
         this.shapes.restart_button.draw(context, program_state, restart_transform, this.materials.restart_button_mat);
+    }
+    draw_score(context, program_state) {
+        // Convert the score to a string
+        const score_string = "Score: " + this.game_state.SCORE.toFixed(0).toString();
+
+        // Set the string for the Text_Line object
+        this.shapes.score_text.set_string(score_string, context);
+
+        // Define the transformation for the score display
+        const score_transform = Mat4.identity()
+            .times(Mat4.translation(30, 22, -25)) // Adjust these values to move the score display
+            .times(Mat4.scale(-3, 3, 3)); // Adjust these values to scale the score display
+
+        // Draw the score
+        this.shapes.score_text.draw(context, program_state, score_transform, this.materials.text_image);
     }
 
     draw_sun(context, program_state) {
