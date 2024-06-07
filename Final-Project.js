@@ -1,6 +1,7 @@
 import { defs, tiny } from "./examples/common.js";
 import { Shape_From_File, Shape_From_File_with_MTL } from "./examples/obj-file-demo.js";
 
+<<<<<<< HEAD
 const { Vector, Vector3, vec, vec3, vec4, color, hex_color, Texture ,Shader, Matrix, Mat4, Light, Shape, Material, Scene } = tiny;
 
 const Text_Line = defs.Text_Line =
@@ -49,6 +50,10 @@ class Text_Line extends Shape
         this.copy_onto_graphics_card( caller.context, ["texture_coord"], false );
     }
 }
+=======
+const { Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture } = tiny;
+const {Textured_Phong} = defs
+>>>>>>> 1d6c8531827d6e7c93a70bb389caf2b95e46d76d
 
 export class Final_Project extends Scene {
     constructor() {
@@ -93,9 +98,11 @@ export class Final_Project extends Scene {
 
     initialize_materials() {
         this.materials = {
-            road_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#303030"), specularity: 0 }),
+            //road_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#303030"), specularity: 0 }),
             road_stripe_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFFFF"), specularity: 0 }),
-            desert_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#E3CDA4"), specularity: 0 }),
+            road_mat: new Material(new defs.Textured_Phong(1), {ambient: 0.3, diffusivity: 0.5, color: hex_color("#000000"),texture:new Texture("assets/road.jpg") }),
+            //desert_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#E3CDA4"), specularity: 0 }),
+            desert_mat: new Material(new defs.Textured_Phong(1), {ambient: 0.8, diffusivity: 0.5, color: hex_color("#000000"),texture:new Texture("assets/sand.jpg") }),
             taxi_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#ffffff"), specularity: 0 }),
             car_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#8b0000"), specularity: 0 }),
             truck_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#808080"), specularity: 0 }),
@@ -789,7 +796,7 @@ export class Final_Project extends Scene {
                 lane: lane,
                 spawnTime: program_state.animation_time,
                 despawnTime: program_state.animation_time + this.game_state.DESPAWN_DELAY, // Add despawnTime property here
-                type: Math.random() < 1 ? "boost" : "sugar_boost",
+                type: Math.random() < 0.5 ? "boost" : "sugar_boost",
                 distance: 0,
             };
             this.game_state.BOOSTS.push(newBoost);
@@ -1055,11 +1062,14 @@ export class Final_Project extends Scene {
                 carMinZ <= otherCarMaxZ &&
                 carMaxZ >= otherCarMinZ
             ) {
-                if (!this.game_state.collisionInProgress && !this.game_state.invincible) {
-                    this.game_state.collisionInProgress = true;
-                    this.game_state.LIVES_LEFT -= 1;
-                    this.game_state.SPEED *= 0.2;
-                    this.game_state.OTHER_CAR_SPEED *= 0.2;
+                if (!this.game_state.collisionInProgress) {
+                    if (!this.game_state.invincible) {
+                        this.game_state.collisionInProgress = true;
+                        this.game_state.LIVES_LEFT -= 1;
+                        this.game_state.SPEED *= 0.2;
+                        this.game_state.OTHER_CAR_SPEED *= 0.2;
+                    }
+
                     otherCar.temporarySpeed = -0.1;
                     otherCar.temporarySpeedExpiration = program_state.animation_time + 2000;
                 }
