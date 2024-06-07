@@ -714,7 +714,7 @@ export class Final_Project extends Scene {
                 lane: lane,
                 spawnTime: program_state.animation_time,
                 despawnTime: program_state.animation_time + this.game_state.DESPAWN_DELAY, // Add despawnTime property here
-                type: Math.random() < 1 ? "boost" : "sugar_boost",
+                type: Math.random() < 0.5 ? "boost" : "sugar_boost",
                 distance: 0,
             };
             this.game_state.BOOSTS.push(newBoost);
@@ -980,11 +980,14 @@ export class Final_Project extends Scene {
                 carMinZ <= otherCarMaxZ &&
                 carMaxZ >= otherCarMinZ
             ) {
-                if (!this.game_state.collisionInProgress && !this.game_state.invincible) {
-                    this.game_state.collisionInProgress = true;
-                    this.game_state.LIVES_LEFT -= 1;
-                    this.game_state.SPEED *= 0.2;
-                    this.game_state.OTHER_CAR_SPEED *= 0.2;
+                if (!this.game_state.collisionInProgress) {
+                    if (!this.game_state.invincible) {
+                        this.game_state.collisionInProgress = true;
+                        this.game_state.LIVES_LEFT -= 1;
+                        this.game_state.SPEED *= 0.2;
+                        this.game_state.OTHER_CAR_SPEED *= 0.2;
+                    }
+
                     otherCar.temporarySpeed = -0.1;
                     otherCar.temporarySpeedExpiration = program_state.animation_time + 2000;
                 }
