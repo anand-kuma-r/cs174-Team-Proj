@@ -37,6 +37,9 @@ export class Final_Project extends Scene {
             sugar_boost: new defs.Cube(),
             sphere: new defs.Subdivision_Sphere(4),
             hat: new Shape_From_File("assets/hat.obj"), // Hat blender model (ob
+            start_button: new Shape_From_File_with_MTL("assets/start.obj", "assets/start.mtl"),
+            end_button: new Shape_From_File_with_MTL("assets/end.obj", "assets/end.mtl"),
+            restart_button: new Shape_From_File_with_MTL("assets/restart.obj", "assets/restart.mtl"),
         };
     }
 
@@ -54,6 +57,9 @@ export class Final_Project extends Scene {
             sugar_boost_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#ffffff"), specularity: 0 }),
             sun: new Material(new defs.Phong_Shader(), { ambient: 1, diffusivity: 0, specularity: 0, color: hex_color("#ff0000") }), // used from project 3 sun
             hat_mat: new Material(new defs.Phong_Shader(), { ambient: 0.3, diffusivity: 1, color: hex_color("#D2691E") }),
+            start_button_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFF00"), specularity: 0 }),
+            end_button_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFF00"), specularity: 0 }),
+            restart_button_mat:  new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFF00"), specularity: 0 }),
         };
     }
 
@@ -108,6 +114,9 @@ export class Final_Project extends Scene {
             visible_reaction: false,
             visible_reaction_happy: false,
             has_boost: false,
+            game_start: false,
+            game_end: false,
+            mouse_listener_added: false,
         };
     }
 
@@ -136,8 +145,31 @@ export class Final_Project extends Scene {
             this.children.push((context.scratchpad.controls = new defs.Movement_Controls()));
         }
 
+        if(!this.game_state.mouse_listener_added)
+        {
+            this.add_mouse_listener(context, program_state);
+            this.game_state.mouse_listener_added = true;
+                
+        }
+
         // Update the camera
         this.update_camera(context, program_state);
+
+        if(!this.game_state.game_start)
+        {
+            this.game_state.LIVES_LEFT = 3;
+            this.draw_start_button(context, program_state);
+            
+        }
+        else if(this.game_state.game_end)
+        {
+            this.draw_end_button(context, program_state);
+        }
+        else
+        {
+            //Draw Lives in top Right
+            this.draw_hearts(context, program_state);
+        }
 
         // Draw the sun
         this.draw_sun(context, program_state);
@@ -169,14 +201,17 @@ export class Final_Project extends Scene {
         if (this.game_state.hat_thrown) {
             this.animate_hat(context, program_state);
         }
-        //Draw Lives in top Right
-        this.draw_hearts(context, program_state);
 
         //Draw emotion
         if (this.game_state.want_emotions)
         {
             this.draw_angry_reaction(context, program_state);
             this.draw_happy_reaction(context, program_state);
+        }
+
+        if(this.game_state.LIVES_LEFT <= 0)
+        {
+            this.game_state.game_end = true;
         }
     }
 
@@ -253,6 +288,128 @@ export class Final_Project extends Scene {
         program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 0.1, 1000);
     }
 
+    add_mouse_listener(context, program_state) {
+        const canvas = context.canvas;
+        const mouse_position = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            return vec(
+                (e.clientX - rect.left) / (rect.right - rect.left) * 2 - 1,
+                (rect.bottom - e.clientY) / (rect.bottom - rect.top) * 2 - 1
+            );
+        };
+    
+        canvas.addEventListener("mousedown", e => {
+            e.preventDefault();
+            this.my_mouse_down(e, mouse_position(e), context, program_state);
+        });
+    }
+    
+    
+    my_mouse_down(e, pos, context, program_state) {
+        //console.log("Mouse click detected at NDC: ", pos);
+    
+        const pos_ndc_near = vec4(pos[0], pos[1], -1.0, 1.0);
+        const pos_ndc_far = vec4(pos[0], pos[1], 1.0, 1.0);
+        const P = program_state.projection_transform;
+        const V = program_state.camera_inverse;
+        const inv_PV = Mat4.inverse(P.times(V));
+        const pos_world_near = inv_PV.times(pos_ndc_near);
+        const pos_world_far = inv_PV.times(pos_ndc_far);
+        pos_world_near.scale_by(1 / pos_world_near[3]);
+        pos_world_far.scale_by(1 / pos_world_far[3]);
+    
+        //console.log("World near position: ", pos_world_near);
+        //console.log("World far position: ", pos_world_far);
+    
+        // Calculate intersection with the plane where the start button is located
+        const start_button_plane_z = -60;
+        const t = (start_button_plane_z - pos_world_near[2]) / (pos_world_far[2] - pos_world_near[2]);
+        const click_position_on_plane = pos_world_near.mix(pos_world_far, t);
+    
+        //console.log("Click position on plane: ", click_position_on_plane);
+    
+        // Check if the click is on the start button
+        if (!this.game_state.game_start) {
+            const start_transform = Mat4.identity()
+                .times(Mat4.scale(1, 1, 1))
+                .times(Mat4.translation(0, 10, start_button_plane_z));
+    
+            const start_button_bounds = {
+                minX: start_transform[0][3] - 2,
+                maxX: start_transform[0][3] + 2,
+                minY: start_transform[1][3] - 2,
+                maxY: start_transform[1][3] + 2,
+            };
+    
+            //console.log("Start button bounds: ", start_button_bounds);
+    
+            if (click_position_on_plane[0] >= start_button_bounds.minX &&
+                click_position_on_plane[0] <= start_button_bounds.maxX &&
+                click_position_on_plane[1] >= start_button_bounds.minY &&
+                click_position_on_plane[1] <= start_button_bounds.maxY) {
+                this.game_state.game_start = true;
+                //console.log("Start button clicked");
+            }
+        }
+
+        if(this.game_state.game_end){
+            const restart_transformation = Mat4.identity()
+                .times(Mat4.scale(.25, .25, 1))
+                .times(Mat4.translation(0, 30, -75));
+
+            const restart_button_bounds = {
+                minX: restart_transformation[0][3] - 2,
+                maxX: restart_transformation[0][3] + 2,
+                minY: restart_transformation[1][3] - 2,
+                maxY: restart_transformation[1][3] + 2,
+            };
+
+            if (click_position_on_plane[0] >= restart_button_bounds.minX &&
+                click_position_on_plane[0] <= restart_button_bounds.maxX &&
+                click_position_on_plane[1] >= restart_button_bounds.minY &&
+                click_position_on_plane[1] <= restart_button_bounds.maxY) {
+                this.game_state.game_start = true;
+                this.game_state.game_end = false;
+                this.game_state.LIVES_LEFT = 3;
+                this.game_state.SPEED = 1;
+                this.game_state.CAR_LANE = 0;
+                this.game_state.target_CAR_LANE = 0;
+                this.game_state.OTHER_CARS = [];
+                this.game_state.BANANAS = [];
+                this.game_state.BOOSTS = [];
+                this.game_state.HATS = [];
+                //console.log("Start button clicked");
+            }
+
+            
+        }
+    }
+
+    
+
+    draw_start_button(context, program_state) {
+        const start_transform = Mat4.identity()
+            .times(Mat4.scale(1, 1, 1))
+            .times(Mat4.translation(0, 10, -60));
+        this.shapes.start_button.draw(context, program_state, start_transform, this.materials.start_button_mat);
+        
+        //console.log("Start button transform: ", start_transform);
+    }
+
+    draw_end_button(context, program_state)
+    {
+        const end_transform = Mat4.identity()
+            .times(Mat4.scale(1, 1, 1))
+            .times(Mat4.translation(0, 11, -70));
+        this.shapes.end_button.draw(context, program_state, end_transform, this.materials.end_button_mat);
+
+        const restart_transform = Mat4.identity()
+        .times(Mat4.scale(.25, .25, 1))
+        .times(Mat4.translation(0, 30, -75));
+        this.shapes.restart_button.draw(context, program_state, restart_transform, this.materials.restart_button_mat);
+
+    }
+    
     draw_sun(context, program_state) {
         const time = program_state.animation_time / 1000;
         const t = time / 100;
@@ -498,6 +655,7 @@ export class Final_Project extends Scene {
             this.game_state.HATS.push(newHat); // Add to array of hats on road
         }
     }
+
     update_and_draw_hats(context, program_state) {
         let hats_to_keep = [];
         for (const hat of this.game_state.HATS) {
@@ -652,7 +810,7 @@ export class Final_Project extends Scene {
         ) {
             this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
             this.game_state.OTHER_CAR_SPEED = this.game_state.SPEED + this.game_state.OTHER_CAR_SPEED;
-            console.log(type);
+            //console.log(type);
             if (type == "boost") {
                 this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
                 for (let car of this.game_state.OTHER_CARS)
@@ -734,18 +892,34 @@ export class Final_Project extends Scene {
         this.game_state.invincible = true;
         this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
         this.game_state.OTHER_CAR_SPEED = this.game_state.BOOST_SPEED_MULTIPLIER;
+        for (let car of this.game_state.OTHER_CARS)
+        {
+                    car.speed *= this.game_state.BOOST_SPEED_MULTIPLIER;
+        }
 
         setTimeout(() => {
             this.game_state.SPEED = 1;
+            for (let car of this.game_state.OTHER_CARS)
+            {
+                car.speed /= this.game_state.BOOST_SPEED_MULTIPLIER;
+            }
             this.game_state.OTHER_CAR_SPEED = 0.5;
             this.game_state.invincible = false;
         }, 7000); // 7 seconds of invincibility
 
         setTimeout(() => {
             this.game_state.SPEED *= 0.5;
+            for (let car of this.game_state.OTHER_CARS)
+            {
+                    car.speed *= 0.5;
+            }
             setTimeout(() => {
                 this.game_state.SPEED = 1;
                 this.game_state.OTHER_CAR_SPEED = 0.5;
+                for (let car of this.game_state.OTHER_CARS)
+                {
+                    car.speed /= 0.5;
+                }
             }, 5000);
         }, 7000);
     }
@@ -775,7 +949,7 @@ export class Final_Project extends Scene {
                 car_position[2] <= bananaMaxZ &&
                 car_position[2] >= bananaMinZ
             ) {
-                console.log("Collision detected!");
+                //console.log("Collision detected!");
                 this.game_state.CAR_SPIN = 6 * this.game_state.SPEED; //speed of Car starts spin
                 this.game_state.SPEED = 1 / this.game_state.BOOST_SPEED_MULTIPLIER; //speed of Speed
                 this.game_state.SPIN_START_TIME = program_state.animation_time;
