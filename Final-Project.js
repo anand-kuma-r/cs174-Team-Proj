@@ -37,7 +37,7 @@ export class Final_Project extends Scene {
             sugar_boost: new defs.Cube(),
             sphere: new defs.Subdivision_Sphere(4),
             hat: new Shape_From_File("assets/hat.obj"), // Hat blender model (ob
-            start_button: new defs.Cube(),
+            start_button: new Shape_From_File_with_MTL("assets/start.obj", "assets/start.mtl"),
         };
     }
 
@@ -112,6 +112,7 @@ export class Final_Project extends Scene {
             has_boost: false,
             game_start: false,
             game_end: false,
+            mouse_listener_added: false,
         };
     }
 
@@ -140,15 +141,21 @@ export class Final_Project extends Scene {
             this.children.push((context.scratchpad.controls = new defs.Movement_Controls()));
         }
 
+        if(!this.game_state.mouse_listener_added)
+        {
+            this.add_mouse_listener(context, program_state);
+            this.game_state.mouse_listener_added = true;
+                
+        }
+
         // Update the camera
         this.update_camera(context, program_state);
 
         if(!this.game_state.game_start)
         {
             this.game_state.LIVES_LEFT = 3;
-            let start_transform = Mat4.translation(-6, 2.2, -75);
-            //this.shapes.start_button.draw(context, program_state, start_transform, this.materials.start_button_mat);
-              
+            this.draw_start_button(context, program_state);
+            
         }
         else
         {
@@ -268,6 +275,83 @@ export class Final_Project extends Scene {
         program_state.projection_transform = Mat4.perspective(Math.PI / 4, context.width / context.height, 0.1, 1000);
     }
 
+    add_mouse_listener(context, program_state) {
+        const canvas = context.canvas;
+        const mouse_position = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            return vec(
+                (e.clientX - rect.left) / (rect.right - rect.left) * 2 - 1,
+                (rect.bottom - e.clientY) / (rect.bottom - rect.top) * 2 - 1
+            );
+        };
+    
+        canvas.addEventListener("mousedown", e => {
+            e.preventDefault();
+            this.my_mouse_down(e, mouse_position(e), context, program_state);
+        });
+    }
+    
+    
+    my_mouse_down(e, pos, context, program_state) {
+        console.log("Mouse click detected at NDC: ", pos);
+    
+        const pos_ndc_near = vec4(pos[0], pos[1], -1.0, 1.0);
+        const pos_ndc_far = vec4(pos[0], pos[1], 1.0, 1.0);
+        const P = program_state.projection_transform;
+        const V = program_state.camera_inverse;
+        const inv_PV = Mat4.inverse(P.times(V));
+        const pos_world_near = inv_PV.times(pos_ndc_near);
+        const pos_world_far = inv_PV.times(pos_ndc_far);
+        pos_world_near.scale_by(1 / pos_world_near[3]);
+        pos_world_far.scale_by(1 / pos_world_far[3]);
+    
+        console.log("World near position: ", pos_world_near);
+        console.log("World far position: ", pos_world_far);
+    
+        // Calculate intersection with the plane where the start button is located
+        const start_button_plane_z = -60;
+        const t = (start_button_plane_z - pos_world_near[2]) / (pos_world_far[2] - pos_world_near[2]);
+        const click_position_on_plane = pos_world_near.mix(pos_world_far, t);
+    
+        console.log("Click position on plane: ", click_position_on_plane);
+    
+        // Check if the click is on the start button
+        if (!this.game_state.game_start) {
+            const start_transform = Mat4.identity()
+                .times(Mat4.scale(1, 1, 1))
+                .times(Mat4.translation(0, 10, start_button_plane_z));
+    
+            const start_button_bounds = {
+                minX: start_transform[0][3] - 2,
+                maxX: start_transform[0][3] + 2,
+                minY: start_transform[1][3] - 2,
+                maxY: start_transform[1][3] + 2,
+            };
+    
+            console.log("Start button bounds: ", start_button_bounds);
+    
+            if (click_position_on_plane[0] >= start_button_bounds.minX &&
+                click_position_on_plane[0] <= start_button_bounds.maxX &&
+                click_position_on_plane[1] >= start_button_bounds.minY &&
+                click_position_on_plane[1] <= start_button_bounds.maxY) {
+                this.game_state.game_start = true;
+                console.log("Start button clicked");
+        
+                }
+        }
+    }
+
+    
+
+    draw_start_button(context, program_state) {
+        const start_transform = Mat4.identity()
+            .times(Mat4.scale(1, 1, 1))
+            .times(Mat4.translation(0, 10, -60));
+        this.shapes.start_button.draw(context, program_state, start_transform, this.materials.start_button_mat);
+        
+        //console.log("Start button transform: ", start_transform);
+    }
+    
     draw_sun(context, program_state) {
         const time = program_state.animation_time / 1000;
         const t = time / 100;
