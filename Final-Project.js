@@ -37,6 +37,7 @@ export class Final_Project extends Scene {
             sugar_boost: new defs.Cube(),
             sphere: new defs.Subdivision_Sphere(4),
             hat: new Shape_From_File("assets/hat.obj"), // Hat blender model (ob
+            start_button: new defs.Cube(),
         };
     }
 
@@ -54,6 +55,7 @@ export class Final_Project extends Scene {
             sugar_boost_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#ffffff"), specularity: 0 }),
             sun: new Material(new defs.Phong_Shader(), { ambient: 1, diffusivity: 0, specularity: 0, color: hex_color("#ff0000") }), // used from project 3 sun
             hat_mat: new Material(new defs.Phong_Shader(), { ambient: 0.3, diffusivity: 1, color: hex_color("#D2691E") }),
+            start_button_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFF00"), specularity: 0 }),
         };
     }
 
@@ -108,6 +110,8 @@ export class Final_Project extends Scene {
             visible_reaction: false,
             visible_reaction_happy: false,
             has_boost: false,
+            game_start: false,
+            game_end: false,
         };
     }
 
@@ -139,6 +143,19 @@ export class Final_Project extends Scene {
         // Update the camera
         this.update_camera(context, program_state);
 
+        if(!this.game_state.game_start)
+        {
+            this.game_state.LIVES_LEFT = 3;
+            let start_transform = Mat4.translation(-6, 2.2, -75);
+            //this.shapes.start_button.draw(context, program_state, start_transform, this.materials.start_button_mat);
+              
+        }
+        else
+        {
+            //Draw Lives in top Right
+            this.draw_hearts(context, program_state);
+        }
+
         // Draw the sun
         this.draw_sun(context, program_state);
 
@@ -169,8 +186,6 @@ export class Final_Project extends Scene {
         if (this.game_state.hat_thrown) {
             this.animate_hat(context, program_state);
         }
-        //Draw Lives in top Right
-        this.draw_hearts(context, program_state);
 
         //Draw emotion
         if (this.game_state.want_emotions)
@@ -498,6 +513,7 @@ export class Final_Project extends Scene {
             this.game_state.HATS.push(newHat); // Add to array of hats on road
         }
     }
+
     update_and_draw_hats(context, program_state) {
         let hats_to_keep = [];
         for (const hat of this.game_state.HATS) {
@@ -734,18 +750,34 @@ export class Final_Project extends Scene {
         this.game_state.invincible = true;
         this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
         this.game_state.OTHER_CAR_SPEED = this.game_state.BOOST_SPEED_MULTIPLIER;
+        for (let car of this.game_state.OTHER_CARS)
+        {
+                    car.speed *= this.game_state.BOOST_SPEED_MULTIPLIER;
+        }
 
         setTimeout(() => {
             this.game_state.SPEED = 1;
+            for (let car of this.game_state.OTHER_CARS)
+            {
+                car.speed /= this.game_state.BOOST_SPEED_MULTIPLIER;
+            }
             this.game_state.OTHER_CAR_SPEED = 0.5;
             this.game_state.invincible = false;
         }, 7000); // 7 seconds of invincibility
 
         setTimeout(() => {
             this.game_state.SPEED *= 0.5;
+            for (let car of this.game_state.OTHER_CARS)
+            {
+                    car.speed *= 0.5;
+            }
             setTimeout(() => {
                 this.game_state.SPEED = 1;
                 this.game_state.OTHER_CAR_SPEED = 0.5;
+                for (let car of this.game_state.OTHER_CARS)
+                {
+                    car.speed /= 0.5;
+                }
             }, 5000);
         }, 7000);
     }
