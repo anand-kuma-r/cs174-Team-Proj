@@ -38,6 +38,8 @@ export class Final_Project extends Scene {
             sphere: new defs.Subdivision_Sphere(4),
             hat: new Shape_From_File("assets/hat.obj"), // Hat blender model (ob
             start_button: new Shape_From_File_with_MTL("assets/start.obj", "assets/start.mtl"),
+            end_button: new Shape_From_File_with_MTL("assets/end.obj", "assets/end.mtl"),
+            restart_button: new Shape_From_File_with_MTL("assets/restart.obj", "assets/restart.mtl"),
         };
     }
 
@@ -56,6 +58,8 @@ export class Final_Project extends Scene {
             sun: new Material(new defs.Phong_Shader(), { ambient: 1, diffusivity: 0, specularity: 0, color: hex_color("#ff0000") }), // used from project 3 sun
             hat_mat: new Material(new defs.Phong_Shader(), { ambient: 0.3, diffusivity: 1, color: hex_color("#D2691E") }),
             start_button_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFF00"), specularity: 0 }),
+            end_button_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFF00"), specularity: 0 }),
+            restart_button_mat:  new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFF00"), specularity: 0 }),
         };
     }
 
@@ -157,6 +161,10 @@ export class Final_Project extends Scene {
             this.draw_start_button(context, program_state);
             
         }
+        else if(this.game_state.game_end)
+        {
+            this.draw_end_button(context, program_state);
+        }
         else
         {
             //Draw Lives in top Right
@@ -199,6 +207,11 @@ export class Final_Project extends Scene {
         {
             this.draw_angry_reaction(context, program_state);
             this.draw_happy_reaction(context, program_state);
+        }
+
+        if(this.game_state.LIVES_LEFT <= 0)
+        {
+            this.game_state.game_end = true;
         }
     }
 
@@ -293,7 +306,7 @@ export class Final_Project extends Scene {
     
     
     my_mouse_down(e, pos, context, program_state) {
-        console.log("Mouse click detected at NDC: ", pos);
+        //console.log("Mouse click detected at NDC: ", pos);
     
         const pos_ndc_near = vec4(pos[0], pos[1], -1.0, 1.0);
         const pos_ndc_far = vec4(pos[0], pos[1], 1.0, 1.0);
@@ -305,15 +318,15 @@ export class Final_Project extends Scene {
         pos_world_near.scale_by(1 / pos_world_near[3]);
         pos_world_far.scale_by(1 / pos_world_far[3]);
     
-        console.log("World near position: ", pos_world_near);
-        console.log("World far position: ", pos_world_far);
+        //console.log("World near position: ", pos_world_near);
+        //console.log("World far position: ", pos_world_far);
     
         // Calculate intersection with the plane where the start button is located
         const start_button_plane_z = -60;
         const t = (start_button_plane_z - pos_world_near[2]) / (pos_world_far[2] - pos_world_near[2]);
         const click_position_on_plane = pos_world_near.mix(pos_world_far, t);
     
-        console.log("Click position on plane: ", click_position_on_plane);
+        //console.log("Click position on plane: ", click_position_on_plane);
     
         // Check if the click is on the start button
         if (!this.game_state.game_start) {
@@ -328,16 +341,47 @@ export class Final_Project extends Scene {
                 maxY: start_transform[1][3] + 2,
             };
     
-            console.log("Start button bounds: ", start_button_bounds);
+            //console.log("Start button bounds: ", start_button_bounds);
     
             if (click_position_on_plane[0] >= start_button_bounds.minX &&
                 click_position_on_plane[0] <= start_button_bounds.maxX &&
                 click_position_on_plane[1] >= start_button_bounds.minY &&
                 click_position_on_plane[1] <= start_button_bounds.maxY) {
                 this.game_state.game_start = true;
-                console.log("Start button clicked");
-        
-                }
+                //console.log("Start button clicked");
+            }
+        }
+
+        if(this.game_state.game_end){
+            const restart_transformation = Mat4.identity()
+                .times(Mat4.scale(.25, .25, 1))
+                .times(Mat4.translation(0, 30, -75));
+
+            const restart_button_bounds = {
+                minX: restart_transformation[0][3] - 2,
+                maxX: restart_transformation[0][3] + 2,
+                minY: restart_transformation[1][3] - 2,
+                maxY: restart_transformation[1][3] + 2,
+            };
+
+            if (click_position_on_plane[0] >= restart_button_bounds.minX &&
+                click_position_on_plane[0] <= restart_button_bounds.maxX &&
+                click_position_on_plane[1] >= restart_button_bounds.minY &&
+                click_position_on_plane[1] <= restart_button_bounds.maxY) {
+                this.game_state.game_start = true;
+                this.game_state.game_end = false;
+                this.game_state.LIVES_LEFT = 3;
+                this.game_state.SPEED = 1;
+                this.game_state.CAR_LANE = 0;
+                this.game_state.target_CAR_LANE = 0;
+                this.game_state.OTHER_CARS = [];
+                this.game_state.BANANAS = [];
+                this.game_state.BOOSTS = [];
+                this.game_state.HATS = [];
+                //console.log("Start button clicked");
+            }
+
+            
         }
     }
 
@@ -350,6 +394,20 @@ export class Final_Project extends Scene {
         this.shapes.start_button.draw(context, program_state, start_transform, this.materials.start_button_mat);
         
         //console.log("Start button transform: ", start_transform);
+    }
+
+    draw_end_button(context, program_state)
+    {
+        const end_transform = Mat4.identity()
+            .times(Mat4.scale(1, 1, 1))
+            .times(Mat4.translation(0, 11, -70));
+        this.shapes.end_button.draw(context, program_state, end_transform, this.materials.end_button_mat);
+
+        const restart_transform = Mat4.identity()
+        .times(Mat4.scale(.25, .25, 1))
+        .times(Mat4.translation(0, 30, -75));
+        this.shapes.restart_button.draw(context, program_state, restart_transform, this.materials.restart_button_mat);
+
     }
     
     draw_sun(context, program_state) {
@@ -752,7 +810,7 @@ export class Final_Project extends Scene {
         ) {
             this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
             this.game_state.OTHER_CAR_SPEED = this.game_state.SPEED + this.game_state.OTHER_CAR_SPEED;
-            console.log(type);
+            //console.log(type);
             if (type == "boost") {
                 this.game_state.SPEED *= this.game_state.BOOST_SPEED_MULTIPLIER;
                 for (let car of this.game_state.OTHER_CARS)
@@ -891,7 +949,7 @@ export class Final_Project extends Scene {
                 car_position[2] <= bananaMaxZ &&
                 car_position[2] >= bananaMinZ
             ) {
-                console.log("Collision detected!");
+                //console.log("Collision detected!");
                 this.game_state.CAR_SPIN = 6 * this.game_state.SPEED; //speed of Car starts spin
                 this.game_state.SPEED = 1 / this.game_state.BOOST_SPEED_MULTIPLIER; //speed of Speed
                 this.game_state.SPIN_START_TIME = program_state.animation_time;
