@@ -1,7 +1,8 @@
 import { defs, tiny } from "./examples/common.js";
 import { Shape_From_File, Shape_From_File_with_MTL } from "./examples/obj-file-demo.js";
 
-const { Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene } = tiny;
+const { Vector, Vector3, vec, vec3, vec4, color, hex_color, Shader, Matrix, Mat4, Light, Shape, Material, Scene, Texture } = tiny;
+const {Textured_Phong} = defs
 
 export class Final_Project extends Scene {
     constructor() {
@@ -45,9 +46,11 @@ export class Final_Project extends Scene {
 
     initialize_materials() {
         this.materials = {
-            road_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#303030"), specularity: 0 }),
+            //road_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#303030"), specularity: 0 }),
             road_stripe_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#FFFFFF"), specularity: 0 }),
-            desert_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#E3CDA4"), specularity: 0 }),
+            road_mat: new Material(new defs.Textured_Phong(1), {ambient: 0.3, diffusivity: 0.5, color: hex_color("#000000"),texture:new Texture("assets/road.jpg") }),
+            //desert_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#E3CDA4"), specularity: 0 }),
+            desert_mat: new Material(new defs.Textured_Phong(1), {ambient: 0.8, diffusivity: 0.5, color: hex_color("#000000"),texture:new Texture("assets/sand.jpg") }),
             taxi_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#ffffff"), specularity: 0 }),
             car_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#8b0000"), specularity: 0 }),
             truck_mat: new Material(new defs.Phong_Shader(), { ambient: 0.8, diffusivity: 0.5, color: hex_color("#808080"), specularity: 0 }),
