@@ -157,7 +157,7 @@ export class Shape_From_File_with_MTL extends Shape {
     
             this.materialOverrides[matName] = new Material(new defs.Textured_Phong(1), {
                 color: color(...diffuseColor),
-                ambient: .3,
+                ambient: 1,
                 diffusivity: .8,
                 specularity: .8,
                 texture: mat.texture ? new Texture(mat.texture) : null,
